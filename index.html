@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schuylkill County School Districts</title>
+<style>
+/* ── Reset ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #f0f2f5;
+  --surface:  #ffffff;
+  --border:   #d0d5dd;
+  --primary:  #1d4ed8;
+  --primary-h:#2563eb;
+  --success:  #16a34a;
+  --danger:   #dc2626;
+  --text:     #1e293b;
+  --muted:    #64748b;
+  --radius:   10px;
+  --shadow:   0 2px 10px rgba(0,0,0,.10);
+}
+
+/* Each screen is a full-viewport "page" layered on top of each other.
+   Only the active one is visible. No scrolling between pages. */
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Screens ─────────────────────────────────────────────── */
+.screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  overflow-y: auto;   /* start/win can scroll on tiny screens */
+}
+.screen.active { display: flex; flex-direction: column; }
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  padding: .65rem 1.5rem; border: none; border-radius: var(--radius);
+  font-size: 1rem; font-weight: 600; cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-h); }
+.btn-ghost { background: var(--surface); color: var(--text); border: 1.5px solid var(--border); }
+.btn-ghost:hover { background: var(--bg); }
+.btn-lg { padding: .85rem 2.2rem; font-size: 1.1rem; }
+
+/* ══════════════════════════════════════════════════════════
+   START SCREEN
+══════════════════════════════════════════════════════════ */
+#start-screen {
+  align-items: center; justify-content: center;
+  padding: 2rem; text-align: center; gap: 1rem;
+}
+#start-screen .icon { font-size: 3.5rem; }
+#start-screen h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; line-height: 1.2; }
+#start-screen p { color: var(--muted); max-width: 420px; line-height: 1.6; font-size: 1rem; }
+#start-screen .card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.5rem;
+  box-shadow: var(--shadow); text-align: left; max-width: 380px; width: 100%;
+}
+#start-screen .card h3 { font-size: .8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+#start-screen .card ul { list-style: none; display: flex; flex-direction: column; gap: .35rem; }
+#start-screen .card li { font-size: .9rem; display: flex; align-items: baseline; gap: .5rem; }
+#start-screen .card li::before { content: "→"; color: var(--primary); font-weight: 700; flex-shrink: 0; }
+
+/* ══════════════════════════════════════════════════════════
+   GAME SCREEN — strict no-scroll, everything must fit in 100vh
+══════════════════════════════════════════════════════════ */
+#game-screen {
+  overflow: hidden;   /* hard stop: nothing overflows the viewport */
+  padding: .6rem;
+  gap: .6rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Header bar ──────────────────────────────────────────── */
+#header {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .55rem 1rem;
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  box-shadow: var(--shadow);
+}
+#header-title { font-weight: 700; font-size: .9rem; color: var(--muted); white-space: nowrap; }
+#progress-track {
+  flex: 1; min-width: 80px;
+  background: var(--border); border-radius: 4px; height: 7px; overflow: hidden;
+}
+#progress-fill {
+  height: 100%; width: 0%; background: var(--primary);
+  border-radius: 4px; transition: width .4s ease;
+}
+.stat {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: .2rem .7rem;
+  font-size: .85rem; font-weight: 700; white-space: nowrap;
+}
+#feedback {
+  font-size: .88rem; font-weight: 700; padding: .2rem .75rem;
+  border-radius: 20px; opacity: 0; transition: opacity .2s;
+  white-space: nowrap;
+}
+#feedback.show-correct { opacity: 1; background: #dcfce7; color: var(--success); }
+#feedback.show-wrong   { opacity: 1; background: #fee2e2; color: var(--danger); }
+
+/* ── Main layout ─────────────────────────────────────────── */
+#main-area {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: .6rem;
+  flex: 1;
+  min-height: 0;   /* allow flex child to shrink below content size */
+  overflow: hidden;
+}
+
+/* Left column (prompt + map) */
+#left-col {
+  display: flex; flex-direction: column; gap: .6rem;
+  min-height: 0; overflow: hidden;
+}
+
+/* ── Map panel — fills all remaining height in left column ── */
+#map-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: .4rem;
+  flex: 1;        /* grow to fill remaining space */
+  min-height: 0;  /* allow shrink */
+}
+#map-panel svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  /* preserve aspect ratio and fit within container */
+  object-fit: contain;
+}
+
+/* ── SVG district styling ────────────────────────────────── */
+
+/* Non-interactive elements */
+#county-outline { fill: #e2e8f0; stroke: #94a3b8; stroke-width: 1.5; }
+#path13-border  { fill: #cbd5e1; stroke: #94a3b8; stroke-width: .5; pointer-events: none; }
+
+/* All clickable districts */
+.district {
+  fill: #bfdbfe;
+  stroke: #1e40af;
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill .15s;
+}
+.district:hover:not(.done):not(.flash-wrong) { fill: #93c5fd; }
+
+/* Correct / locked */
+.district.done {
+  fill: #bbf7d0 !important;
+  stroke: #166534 !important;
+  cursor: default;
+}
+
+/* Wrong flash */
+.district.flash-wrong { fill: #fca5a5 !important; stroke: #991b1b !important; }
+
+/* Correct flash animation */
+@keyframes pop-correct {
+  0%   { filter: drop-shadow(0 0 0px #16a34a); }
+  40%  { filter: drop-shadow(0 0 10px #16a34a); }
+  100% { filter: drop-shadow(0 0 0px #16a34a); }
+}
+.district.done { animation: pop-correct .5s ease; }
+
+/* ── Prompt card — fixed compact height, never grows ──────── */
+#prompt-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .55rem 1rem;
+  display: flex; flex-direction: row; align-items: center; gap: .9rem;
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+}
+#prompt-label {
+  font-size: .78rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em; white-space: nowrap;
+}
+#logo-wrap {
+  height: 80px; width: 130px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px dashed var(--border); border-radius: 8px;
+  background: var(--bg); overflow: hidden; flex-shrink: 0;
+}
+#logo-img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain; display: block;
+}
+#logo-fallback {
+  font-size: .88rem; font-weight: 700; color: var(--muted);
+  text-align: center; padding: .4rem; display: none;
+}
+
+/* ── Side panel ──────────────────────────────────────────── */
+#side-panel {
+  display: flex; flex-direction: column; gap: .6rem;
+  min-height: 0; overflow: hidden;
+}
+
+.panel-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+  box-shadow: var(--shadow);
+}
+.panel-card h3 {
+  font-size: .75rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em; margin-bottom: .5rem;
+}
+
+/* District list fills all remaining side-panel height */
+#checklist-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+}
+#district-list {
+  list-style: none;
+  display: flex; flex-direction: column; gap: .22rem;
+  overflow-y: auto; padding-right: 2px;
+  flex: 1; min-height: 0;
+}
+#district-list::-webkit-scrollbar { width: 4px; }
+#district-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+#district-list li {
+  font-size: .8rem; padding: .25rem .45rem;
+  border-radius: 5px; display: flex; align-items: center; gap: .4rem;
+  color: var(--muted); transition: background .15s;
+}
+#district-list li.done {
+  color: var(--success); background: #f0fdf4;
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border); flex-shrink: 0; transition: background .2s;
+}
+#district-list li.done .dot { background: var(--success); }
+
+/* ══════════════════════════════════════════════════════════
+   WIN SCREEN
+══════════════════════════════════════════════════════════ */
+#win-screen {
+  align-items: center; justify-content: center;
+  padding: 2rem; text-align: center; gap: 1.1rem;
+}
+#win-screen h2 { font-size: 2.2rem; font-weight: 800; }
+
+.win-stats { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+.win-stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .9rem 1.6rem;
+  min-width: 110px; box-shadow: var(--shadow);
+}
+.win-stat .val { font-size: 1.9rem; font-weight: 800; color: var(--primary); }
+.win-stat .lbl { font-size: .78rem; color: var(--muted); margin-top: .1rem; }
+
+/* Leaderboard */
+#leaderboard-wrap {
+  width: 100%; max-width: 500px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  overflow: hidden;
+}
+#leaderboard-wrap .lb-head {
+  padding: .75rem 1.1rem .5rem;
+  font-size: .8rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+#lb-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+#lb-table th {
+  text-align: left; padding: .45rem 1.1rem;
+  border-bottom: 1px solid var(--border); color: var(--muted);
+  font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+}
+#lb-table td { padding: .55rem 1.1rem; border-bottom: 1px solid var(--bg); }
+/* Gold / silver / bronze rows */
+#lb-table tbody tr:nth-child(1) td { font-weight: 700; color: #b45309; background: #fffbeb; }
+#lb-table tbody tr:nth-child(2) td { font-weight: 600; color: #475569; background: #f8fafc; }
+#lb-table tbody tr:nth-child(3) td { font-weight: 600; color: #7c5228; background: #fdf8f3; }
+#lb-table .rank-cell { font-size: 1rem; }
+/* "This run" highlight */
+#lb-table tbody tr.this-run td { background: #eff6ff !important; color: var(--primary) !important; font-weight: 700; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 860px) {
+  #main-area { grid-template-columns: 1fr; }
+  #side-panel { display: none; }
+  #prompt-card { flex-direction: row; }
+}
+@media (max-width: 480px) {
+  #header { gap: .4rem; }
+  #header-title { display: none; }
+  #prompt-card { padding: .4rem .6rem; }
+  #logo-wrap { height: 64px; width: 100px; }
+  #game-screen { padding: .4rem; gap: .4rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     START SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="start-screen" class="screen active">
+  <div class="icon">🗺️</div>
+  <h1>Schuylkill County<br>School Districts</h1>
+  <p>A school district logo will appear. Click the matching region on the map to score a point. Find all 12 districts as fast as you can!</p>
+  <div class="card">
+    <h3>How to play</h3>
+    <ul>
+      <li>Study the logo shown in the panel</li>
+      <li>Click the matching district on the map</li>
+      <li>Wrong clicks flash red — keep trying!</li>
+      <li>Correct districts lock green</li>
+    </ul>
+  </div>
+  <button class="btn btn-primary btn-lg" id="btn-start">Start Game</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     GAME SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="game-screen" class="screen">
+
+  <!-- Header -->
+  <div id="header">
+    <span id="header-title">Schuylkill County Districts</span>
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <span class="stat" id="stat-score">Score: 0</span>
+    <span class="stat" id="stat-progress">0 / 12</span>
+    <span class="stat" id="stat-timer">0:00</span>
+    <span id="feedback"></span>
+  </div>
+
+  <!-- Main -->
+  <div id="main-area">
+
+    <!-- Map + prompt stacked in left column -->
+    <div id="left-col">
+
+      <!-- Logo prompt -->
+      <div id="prompt-card">
+        <div id="prompt-label">Which district has this logo?</div>
+        <div id="logo-wrap">
+          <img id="logo-img" src="" alt="">
+          <div id="logo-fallback"></div>
+        </div>
+      </div>
+
+      <!-- SVG Map -->
+      <div id="map-panel">
+        <svg viewBox="0 0 492 290" xmlns="http://www.w3.org/2000/svg" aria-label="Schuylkill County school district map">
+
+          <!-- County outline (background shape) -->
+          <path id="county-outline"
+            d="M 469.29128,137.2067 431.26633,105.20237 388.17138,64.008669 366.94078,40.559948 353.94893,25.349968 338.42207,31.68746 253.81655,2.8518714 216.74222,42.461196 205.33474,94.111755 15.209981,182.83664 144.49482,287.72213 l 33.5887,-10.13998 16.16061,-4.11937 44.99619,-1.58438 9.50624,-6.65436 10.13999,0.31687 3.48562,-4.75312 8.87249,1.90125 12.04123,-9.82311 22.4981,-9.82311 9.82311,0.31687 7.28811,-10.13999 4.43625,3.8025 4.11937,-6.97124 5.38687,6.65436 4.43624,-2.21812 4.11937,3.8025 11.09061,-42.4612 66.22679,-32.00433 5.38687,-0.95063 29.46934,-19.01247 1.90125,-4.43625 3.16874,0.63375 z"/>
+
+          <!-- Decorative border region (no district) -->
+          <path id="path13-border"
+            d="m 218.06466,41.348604 35.19554,0.246123 2.95347,10.091028 11.07552,15.751849 13.29062,-8.36817 16.98246,-2.461226 3.1996,3.937962 36.67227,-8.36817 1.72286,6.153066 25.10451,-4.184085 2.2151,-4.67633 7.13756,-1.476736 -18.70532,-21.41267 -15.99797,6.645312 -85.40456,-31.0114532 z"/>
+
+          <!-- ─────────────────────────────────────────────────────
+               DISTRICT REGIONS
+               Each path has class="district" and an id matching
+               the DISTRICTS array in the JS below.
+               ───────────────────────────────────────────────────── -->
+
+          <path class="district" id="shenandoah"
+            d="m 221.51038,88.604151 44.5482,-22.643283 4.67633,14.275113 -5.66082,0.246123 0.49224,5.906943 -9.59878,1.230614 1.23061,6.399188 8.86042,13.290621 -18.95145,7.6298 -3.69184,-4.67633 3.1996,-0.73836 -2.70735,-6.64532 12.55225,-4.430203 -1.96898,-3.937962 -21.16655,5.414698 z"/>
+
+          <path class="district" id="mahanoy"
+            d="m 297.26294,56.658472 -17.65726,3.104574 -12.4183,6.791255 3.29861,13.388475 -4.65686,0.582107 0.19404,5.433005 -9.70179,1.746322 0.5821,6.403184 -24.64255,5.821076 3.88072,4.8509 22.89623,-6.791259 7.5674,9.701789 -20.76184,6.40319 68.10659,-0.58211 28.91134,-14.358654 -2.52247,-5.62704 -7.17932,-5.821076 2.7165,-6.791255 -2.91054,-2.32843 4.26879,-6.015112 -6.40318,-7.567399 21.73201,-8.731614 -13.58251,1.358252 -0.97018,-6.209148 -37.25488,8.537578 z"/>
+
+          <path class="district" id="tamaqua"
+            d="m 374.0757,47.392124 -7.73606,2.216369 -2.7753,4.509863 -10.92774,2.081475 -22.02895,8.84627 6.93825,8.499357 -4.50986,4.856776 2.7753,3.122213 -2.94876,6.417882 6.93825,5.724056 3.12221,6.07097 -31.39558,14.917235 15.43761,44.57827 46.13937,-13.00922 30.35484,27.05917 19.08019,-10.06046 7.80553,-0.86728 18.90674,-11.96848 9.71355,-8.15245 0.52037,-2.08147 8.84627,-2.7753 -5.03023,-6.24443 -22.20241,-16.82526 -36.25236,-30.875214 z"/>
+
+          <path class="district" id="north-schuykill"
+            d="m 135.85393,128.50101 5.25208,-3.15125 24.50973,0.70028 3.85153,5.60222 0.70028,-4.5518 2.10084,-2.10084 11.55458,17.15681 14.3557,2.80111 25.91029,-25.21 15.05597,-9.10362 6.30251,-1.05041 -2.10084,-7.00278 -7.00278,2.10083 -15.05598,-16.456533 44.8178,-22.058757 -9.8039,-14.705838 -3.15125,-9.803892 -35.71417,0.700278 -11.20445,53.221128 z"/>
+
+          <path class="district" id="saint-clair"
+            d="m 223.89531,119.93096 10.88632,24.31278 -0.72575,8.70905 24.13134,-2.90301 8.89049,11.97495 9.97913,-6.53179 3.99165,11.24919 9.07194,-5.80603 3.08445,7.43898 33.38472,-9.25337 -15.24085,-45.35967 -65.31792,0.36288 -2.90302,-3.99165 z"/>
+
+          <path class="district" id="pottsville"
+            d="m 235.32595,152.0456 23.22415,-2.17726 7.43898,11.97495 10.16057,-6.35035 5.08028,11.06775 -17.41811,7.07611 -0.54432,5.08029 -5.44316,2.3587 -1.81438,-4.35453 -14.87797,5.80604 -0.9072,-8.52762 h -4.17309 l -5.6246,-5.6246 4.35453,-4.35453 -5.6246,-2.72158 z"/>
+
+          <path class="district" id="minersville"
+            d="m 182.86912,141.52052 -31.25757,29.04247 10.33715,9.84491 11.56776,-2.95348 6.64531,16.49022 -10.33715,4.18409 20.42818,17.96695 21.41267,-9.35266 10.58328,-7.38368 16.49021,-4.67633 -2.46122,-4.43021 8.12204,-3.69184 -3.69184,-4.92245 -0.49224,-7.38368 -3.93796,-0.49224 -5.66082,-5.66083 3.69184,-3.69184 -5.16858,-2.95347 5.4147,-8.36817 0.49224,-9.10653 -11.81388,-24.12002 -25.10451,25.35063 z"/>
+
+          <path class="district" id="schuylkill-haven"
+            d="m 278.10299,255.2004 -20.85772,-38.85263 9.8154,-4.49872 -2.45385,-7.77053 2.04488,-6.5436 1.6359,-2.45385 7.77052,5.31668 -3.2718,9.40642 9.8154,-6.13462 5.31667,2.45385 -1.22692,-4.08975 4.9077,-2.45385 2.86282,3.2718 h 3.2718 l 3.2718,-2.45385 -0.40897,10.22437 h -4.08975 l 0.84931,3.59447 -0.72087,4.44533 1.56188,1.56187 -3.24389,3.12374 3.8446,3.0036 3.84461,-2.64317 2.16259,3.96475 4.68561,1.0813 0.96115,2.52302 4.9259,0.24029 2.16259,-0.24029 -1.44172,-4.32518 2.16259,-3.12375 4.20504,1.68202 1.08129,7.80935 -9.73166,9.97195 -11.17338,1.08129 z"/>
+
+          <path class="district" id="tri-valley"
+            d="m 16.456533,183.82297 44.467652,36.7646 72.478775,-18.55737 -0.70028,-3.85153 9.45375,-2.10083 18.90751,-16.1064 -9.45376,-9.10361 31.86265,-29.76182 -10.50417,-15.40611 -3.50139,5.60222 -4.20166,-3.85153 -24.50973,-1.40055 -63.375162,29.41167 z"/>
+
+          <path class="district" id="williams-valley"
+            d="m 61.624463,220.93771 30.462093,22.75903 17.506954,-7.70306 9.80389,-10.15403 12.25486,-12.25486 5.25209,0.70027 -4.20167,-12.25486 z"/>
+
+          <path class="district" id="pine-grove"
+            d="m 92.086556,244.74716 51.820574,43.06709 9.45375,-1.05041 19.60778,-8.0532 21.70862,-5.60222 26.26043,-0.35014 18.55736,-2.10084 -29.06153,-63.72529 -21.35848,8.75347 -18.90751,-17.85709 9.80389,-4.20167 -6.65264,-16.45653 -14.00556,3.50139 -17.50695,15.75626 -9.80389,2.10083 4.90195,16.45653 -5.95237,-1.05041 -21.35847,21.70861 z"/>
+
+          <path class="district" id="blue-mountain"
+            d="m 210.43354,206.93215 29.06153,64.42557 7.35292,-5.95236 11.20445,-0.35014 5.60222,-4.20167 7.35292,2.10083 5.25209,-4.20166 1.75069,-2.80111 -21.00834,-39.91585 9.80389,-4.20167 -3.15125,-8.40333 4.55181,-8.75348 8.0532,5.95236 -3.50139,9.10362 10.15403,-5.60223 4.20167,1.7507 -0.70028,-3.85153 5.25208,-2.80111 3.15125,3.15125 2.45098,0.70028 3.50139,-2.80112 -0.35014,11.20445 -3.85153,-0.35014 -0.70028,8.0532 0.98014,-0.53437 1.36841,1.66164 -3.32328,3.22554 3.71426,2.93231 4.00749,-2.63908 2.05262,4.20298 4.4962,0.78195 1.17293,2.63908 h 7.23303 l -1.46615,-4.59395 2.34585,-3.03006 4.00749,1.85713 1.27066,7.42852 4.39847,3.51878 2.34585,-2.83457 -0.0977,-2.63908 6.35334,3.90975 4.10523,-0.8797 3.1278,3.1278 4.54961,-5.47415 7.38368,-35.44166 47.25555,-22.39716 -30.27309,-27.31962 -79.74373,21.6588 -3.1996,-6.64531 -8.86041,4.67633 -17.47471,6.89143 v 5.16858 l -6.15307,2.70734 -1.47673,-4.18408 -15.01348,5.16858 4.4302,4.92245 -8.86041,3.69184 1.72286,3.93796 -15.75185,4.43021 z"/>
+
+        </svg>
+      </div>
+    </div>
+
+    <!-- Right: sidebar -->
+    <div id="side-panel">
+      <!-- Score card -->
+      <div class="panel-card">
+        <h3>Stats</h3>
+        <div style="display:flex;flex-direction:column;gap:.35rem;">
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Score</span>
+            <span id="sb-score" style="font-weight:700">0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Found</span>
+            <span id="sb-found" style="font-weight:700">0 / 12</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Accuracy</span>
+            <span id="sb-accuracy" style="font-weight:700">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Time</span>
+            <span id="sb-timer" style="font-weight:700">0:00</span>
+          </div>
+        </div>
+      </div>
+      <!-- District checklist -->
+      <div class="panel-card" id="checklist-card">
+        <h3>Districts</h3>
+        <ul id="district-list"></ul>
+      </div>
+    </div>
+
+  </div><!-- /main-area -->
+</div><!-- /game-screen -->
+
+<!-- ══════════════════════════════════════════════════════════
+     WIN SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="win-screen" class="screen">
+  <div style="font-size:3rem">🎉</div>
+  <h2>All districts found!</h2>
+  <p style="color:var(--muted);max-width:340px">You identified every Schuylkill County school district.</p>
+  <div class="win-stats">
+    <div class="win-stat"><div class="val" id="w-score">0</div><div class="lbl">Score</div></div>
+    <div class="win-stat"><div class="val" id="w-time">0:00</div><div class="lbl">Time</div></div>
+    <div class="win-stat"><div class="val" id="w-accuracy">0%</div><div class="lbl">Accuracy</div></div>
+  </div>
+  <div id="leaderboard-wrap">
+    <div class="lb-head">
+      <span>🏆 High Scores</span>
+      <button class="btn btn-ghost" id="btn-clear-lb" style="padding:.2rem .65rem;font-size:.78rem;">Clear</button>
+    </div>
+    <table id="lb-table">
+      <thead>
+        <tr>
+          <th style="width:3rem">Rank</th>
+          <th>Score</th>
+          <th>Time</th>
+          <th>Accuracy</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="lb-body"></tbody>
+    </table>
+  </div>
+  <button class="btn btn-primary btn-lg" id="btn-restart">Play Again</button>
+</div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════════════
+   DISTRICT DATA
+   id        → must match the SVG path id above
+   name      → display name
+   logo      → path to logo image (relative to this HTML file)
+   alt       → alt text for the image
+══════════════════════════════════════════════════════════ */
+const DISTRICTS = [
+  { id: 'blue-mountain',    name: 'Blue Mountain',          logo: 'logos/bluemountainsign.jpg',      alt: 'Blue Mountain School District logo'       },
+  { id: 'mahanoy',          name: 'Mahanoy Area',           logo: 'logos/mahanoysign.jpg',            alt: 'Mahanoy Area School District logo'        },
+  { id: 'minersville',      name: 'Minersville Area',       logo: 'logos/minerssign.jpg',             alt: 'Minersville Area School District logo'    },
+  { id: 'north-schuykill',  name: 'North Schuylkill',       logo: 'logos/northschuylkillsign.jpg',   alt: 'North Schuylkill School District logo'    },
+  { id: 'pine-grove',       name: 'Pine Grove Area',        logo: 'logos/pinegrovesign.jpg',          alt: 'Pine Grove Area School District logo'     },
+  { id: 'pottsville',       name: 'Pottsville Area',        logo: 'logos/pottsvilleareasign.jpg',     alt: 'Pottsville Area School District logo'     },
+  { id: 'saint-clair',      name: 'Saint Clair Area',       logo: 'logos/stclairsign.jpg',            alt: 'Saint Clair Area School District logo'    },
+  { id: 'schuylkill-haven', name: 'Schuylkill Haven Area',  logo: 'logos/schhavensign.jpg',           alt: 'Schuylkill Haven Area School District logo'},
+  { id: 'shenandoah',       name: 'Shenandoah Valley',      logo: 'logos/shenandoahsign.jpg',         alt: 'Shenandoah Valley School District logo'   },
+  { id: 'tamaqua',          name: 'Tamaqua Area',           logo: 'logos/tamaquasign.jpg',            alt: 'Tamaqua Area School District logo'        },
+  { id: 'tri-valley',       name: 'Tri-Valley',             logo: 'logos/tvbulldogslogo-final.png',   alt: 'Tri-Valley School District logo'          },
+  { id: 'williams-valley',  name: 'Williams Valley',        logo: 'logos/williamsvalleysign.jpg',     alt: 'Williams Valley School District logo'     },
+];
+
+/* ══════════════════════════════════════════════════════════
+   GAME STATE
+══════════════════════════════════════════════════════════ */
+const S = {
+  queue:           [],    // remaining districts to ask
+  current:         null,  // current district object
+  score:           0,
+  totalClicks:     0,
+  correctClicks:   0,
+  completedIds:    new Set(),
+  seconds:         0,
+  timerHandle:     null,
+  active:          false,
+};
+
+/* ══════════════════════════════════════════════════════════
+   DOM REFS
+══════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const screens = { start: $('start-screen'), game: $('game-screen'), win: $('win-screen') };
+
+/* ══════════════════════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════════════════════ */
+function showScreen(name) {
+  Object.keys(screens).forEach(k => screens[k].classList.toggle('active', k === name));
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function fmt(secs) {
+  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+}
+
+function accuracy() {
+  if (S.totalClicks === 0) return '—';
+  return Math.round((S.correctClicks / S.totalClicks) * 100) + '%';
+}
+
+/* ══════════════════════════════════════════════════════════
+   INITIALIZATION
+══════════════════════════════════════════════════════════ */
+function buildChecklist() {
+  const ul = $('district-list');
+  ul.innerHTML = '';
+  DISTRICTS.forEach(d => {
+    const li = document.createElement('li');
+    li.id = `li-${d.id}`;
+    li.innerHTML = `<span class="dot"></span>${d.name}`;
+    ul.appendChild(li);
+  });
+}
+
+function attachMapClicks() {
+  document.querySelectorAll('.district').forEach(el => {
+    el.addEventListener('click', () => handleClick(el.id));
+  });
+}
+
+function resetMap() {
+  document.querySelectorAll('.district').forEach(el => {
+    el.classList.remove('done', 'flash-wrong');
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   GAME FLOW
+══════════════════════════════════════════════════════════ */
+function startGame() {
+  S.queue         = shuffle(DISTRICTS);
+  S.current       = null;
+  S.score         = 0;
+  S.totalClicks   = 0;
+  S.correctClicks = 0;
+  S.seconds       = 0;
+  S.completedIds  = new Set();
+  S.active        = true;
+
+  resetMap();
+  buildChecklist();
+  updateHUD();
+  hideFeedback();
+
+  clearInterval(S.timerHandle);
+  S.timerHandle = setInterval(() => { S.seconds++; updateTimers(); }, 1000);
+
+  showScreen('game');
+  nextPrompt();
+}
+
+function nextPrompt() {
+  if (S.queue.length === 0) { endGame(); return; }
+  S.current = S.queue.pop();
+  loadLogo(S.current);
+}
+
+function loadLogo(district) {
+  const img = $('logo-img');
+  const fb  = $('logo-fallback');
+  img.style.display = 'block';
+  fb.style.display  = 'none';
+  img.alt = district.alt;
+  img.src = district.logo;
+  img.onerror = () => {
+    img.style.display = 'none';
+    fb.style.display  = 'block';
+    fb.textContent    = district.name;
+  };
+}
+
+/* ══════════════════════════════════════════════════════════
+   MAP CLICK HANDLING
+══════════════════════════════════════════════════════════ */
+function handleClick(clickedId) {
+  if (!S.active || !S.current) return;
+  if (S.completedIds.has(clickedId)) return;  // already solved
+
+  S.totalClicks++;
+
+  if (clickedId === S.current.id) {
+    onCorrect(clickedId);
+  } else {
+    onWrong(clickedId);
+  }
+}
+
+function onCorrect(id) {
+  S.correctClicks++;
+  S.score += 10;
+  S.completedIds.add(id);
+
+  // Lock map region
+  document.getElementById(id).classList.add('done');
+
+  // Check sidebar item
+  const li = $(`li-${id}`);
+  if (li) li.classList.add('done');
+
+  showFeedback('correct', '✓ Correct! +10');
+  updateHUD();
+
+  S.active = false;
+  setTimeout(() => {
+    hideFeedback();
+    S.active = true;
+    nextPrompt();
+  }, 700);
+}
+
+function onWrong(id) {
+  showFeedback('wrong', '✗ Not quite — try again!');
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('flash-wrong');
+  setTimeout(() => el.classList.remove('flash-wrong'), 550);
+}
+
+/* ══════════════════════════════════════════════════════════
+   HUD / DISPLAY
+══════════════════════════════════════════════════════════ */
+function updateHUD() {
+  const n = DISTRICTS.length;
+  const c = S.completedIds.size;
+  $('stat-score').textContent    = `Score: ${S.score}`;
+  $('stat-progress').textContent = `${c} / ${n}`;
+  $('progress-fill').style.width = `${(c / n) * 100}%`;
+  $('sb-score').textContent      = S.score;
+  $('sb-found').textContent      = `${c} / ${n}`;
+  $('sb-accuracy').textContent   = accuracy();
+}
+
+function updateTimers() {
+  const t = fmt(S.seconds);
+  $('stat-timer').textContent = t;
+  $('sb-timer').textContent   = t;
+}
+
+function showFeedback(type, msg) {
+  const el = $('feedback');
+  el.textContent = msg;
+  el.className   = type === 'correct' ? 'show-correct' : 'show-wrong';
+}
+
+function hideFeedback() {
+  const el = $('feedback');
+  el.textContent = '';
+  el.className   = '';
+}
+
+/* ══════════════════════════════════════════════════════════
+   WIN SCREEN
+══════════════════════════════════════════════════════════ */
+function endGame() {
+  clearInterval(S.timerHandle);
+  S.active = false;
+
+  const acc = S.totalClicks > 0
+    ? Math.round((S.correctClicks / S.totalClicks) * 100)
+    : 100;
+
+  $('w-score').textContent    = S.score;
+  $('w-time').textContent     = fmt(S.seconds);
+  $('w-accuracy').textContent = acc + '%';
+
+  const thisRun = { score: S.score, time: S.seconds, accuracy: acc, date: new Date().toLocaleDateString() };
+  saveRun(thisRun);
+  renderLeaderboard(thisRun);
+  showScreen('win');
+}
+
+/* ══════════════════════════════════════════════════════════
+   LOCAL STORAGE LEADERBOARD
+══════════════════════════════════════════════════════════ */
+const LS_KEY = 'schuylkill-quiz-v2';
+
+function saveRun(run) {
+  const runs = loadRuns();
+  runs.push(run);
+  // Sort: highest score first, then fastest time
+  runs.sort((a, b) => b.score - a.score || a.time - b.time);
+  try { localStorage.setItem(LS_KEY, JSON.stringify(runs.slice(0, 10))); } catch {}
+}
+
+function loadRuns() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
+}
+
+function clearRuns() {
+  try { localStorage.removeItem(LS_KEY); } catch {}
+}
+
+function renderLeaderboard(currentRun) {
+  const MEDALS = ['🥇', '🥈', '🥉'];
+  const runs   = loadRuns();
+  const tb     = $('lb-body');
+  tb.innerHTML = '';
+
+  if (!runs.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:.75rem">No records yet — play to set one!</td></tr>';
+    return;
+  }
+
+  runs.forEach((r, i) => {
+    const medal   = MEDALS[i] || `${i + 1}`;
+    const isThis  = currentRun && r.score === currentRun.score && r.time === currentRun.time && r.date === currentRun.date;
+    const tr      = document.createElement('tr');
+    if (isThis) tr.classList.add('this-run');
+    tr.innerHTML  = `
+      <td class="rank-cell">${medal}</td>
+      <td><strong>${r.score}</strong></td>
+      <td>${fmt(r.time)}</td>
+      <td>${r.accuracy}%</td>
+      <td style="color:var(--muted);font-size:.8rem">${r.date || '—'}</td>
+    `;
+    tb.appendChild(tr);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   EVENT WIRING
+══════════════════════════════════════════════════════════ */
+$('btn-start').addEventListener('click', startGame);
+$('btn-restart').addEventListener('click', startGame);
+$('btn-clear-lb').addEventListener('click', () => { clearRuns(); renderLeaderboard(null); });
+
+/* ══════════════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════════════ */
+buildChecklist();
+attachMapClicks();
+showScreen('start');
+</script>
+</body>
+</html>
