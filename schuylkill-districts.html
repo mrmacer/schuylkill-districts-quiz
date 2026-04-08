@@ -1,1014 +1,639 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!--
-  ============================================================
-  SCHUYLKILL COUNTY SCHOOL DISTRICT MAP QUIZ
-  ============================================================
-  WHAT TO REPLACE WHEN YOU HAVE FINAL ASSETS:
-
-  1. DISTRICT DATA (search for "DISTRICT DATA"):
-     - Update each district's `name`, `id`, `logo`, and `color`
-     - Remove any districts that don't belong
-     - Add any missing districts
-     - The `id` here MUST match the `id` on the SVG <g> element
-
-  2. SVG MAP (search for "REPLACE SVG MAP"):
-     - Replace the entire <g id="district-regions"> block
-     - Each district group must use: <g id="YOUR-ID" class="district-region">
-     - The id must match the district's `id` in the data above
-     - All other game logic will work automatically
-
-  3. LOGO FILES (search for "logos/"):
-     - Place logo images in a folder named "logos/" next to this HTML file
-     - Name them to match the paths in the district data
-     - If an image fails to load, the district name shows as fallback
-  ============================================================
--->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Schuylkill County School Districts Quiz</title>
-
-<!-- ============================================================
-     CSS STYLES
-     ============================================================ -->
+<title>Schuylkill County School Districts</title>
 <style>
-  /* ---- Reset & Base ---- */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Reset ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg:         #f0f2f5;
-    --surface:    #ffffff;
-    --border:     #d0d5dd;
-    --primary:    #2563eb;
-    --primary-dk: #1d4ed8;
-    --success:    #16a34a;
-    --danger:     #dc2626;
-    --text:       #1e293b;
-    --muted:      #64748b;
-    --radius:     10px;
-    --shadow:     0 2px 8px rgba(0,0,0,.10);
-    --transition: .18s ease;
-  }
+:root {
+  --bg:       #f0f2f5;
+  --surface:  #ffffff;
+  --border:   #d0d5dd;
+  --primary:  #1d4ed8;
+  --primary-h:#2563eb;
+  --success:  #16a34a;
+  --danger:   #dc2626;
+  --text:     #1e293b;
+  --muted:    #64748b;
+  --radius:   10px;
+  --shadow:   0 2px 10px rgba(0,0,0,.10);
+}
 
-  body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
+/* Each screen is a full-viewport "page" layered on top of each other.
+   Only the active one is visible. No scrolling between pages. */
+html, body { height: 100%; overflow: hidden; }
 
-  /* ---- Screens ---- */
-  .screen { display: none; width: 100%; }
-  .screen.active { display: flex; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
 
-  /* ============================================================
-     START SCREEN
-     ============================================================ */
-  #start-screen {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
-    text-align: center;
-    gap: 1rem;
-  }
+/* ── Screens ─────────────────────────────────────────────── */
+.screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  overflow-y: auto;   /* start/win can scroll on tiny screens */
+}
+.screen.active { display: flex; flex-direction: column; }
 
-  #start-screen .logo-mark {
-    font-size: 3.5rem;
-    margin-bottom: .25rem;
-  }
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  padding: .65rem 1.5rem; border: none; border-radius: var(--radius);
+  font-size: 1rem; font-weight: 600; cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-h); }
+.btn-ghost { background: var(--surface); color: var(--text); border: 1.5px solid var(--border); }
+.btn-ghost:hover { background: var(--bg); }
+.btn-lg { padding: .85rem 2.2rem; font-size: 1.1rem; }
 
-  #start-screen h1 {
-    font-size: clamp(1.6rem, 4vw, 2.4rem);
-    font-weight: 700;
-    margin-bottom: .25rem;
-  }
+/* ══════════════════════════════════════════════════════════
+   START SCREEN
+══════════════════════════════════════════════════════════ */
+#start-screen {
+  align-items: center; justify-content: center;
+  padding: 2rem; text-align: center; gap: 1rem;
+}
+#start-screen .icon { font-size: 3.5rem; }
+#start-screen h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; line-height: 1.2; }
+#start-screen p { color: var(--muted); max-width: 420px; line-height: 1.6; font-size: 1rem; }
+#start-screen .card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.5rem;
+  box-shadow: var(--shadow); text-align: left; max-width: 380px; width: 100%;
+}
+#start-screen .card h3 { font-size: .8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+#start-screen .card ul { list-style: none; display: flex; flex-direction: column; gap: .35rem; }
+#start-screen .card li { font-size: .9rem; display: flex; align-items: baseline; gap: .5rem; }
+#start-screen .card li::before { content: "→"; color: var(--primary); font-weight: 700; flex-shrink: 0; }
 
-  #start-screen .tagline {
-    font-size: 1.05rem;
-    color: var(--muted);
-    max-width: 440px;
-    line-height: 1.6;
-  }
+/* ══════════════════════════════════════════════════════════
+   GAME SCREEN — strict no-scroll, everything must fit in 100vh
+══════════════════════════════════════════════════════════ */
+#game-screen {
+  overflow: hidden;   /* hard stop: nothing overflows the viewport */
+  padding: .6rem;
+  gap: .6rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
 
-  /* Name input */
-  .name-field {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .4rem;
-  }
-  .name-field label {
-    font-size: .88rem;
-    font-weight: 600;
-    color: var(--muted);
-  }
-  .name-field input {
-    padding: .55rem 1rem;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    font-size: 1rem;
-    width: 220px;
-    text-align: center;
-    background: var(--surface);
-    color: var(--text);
-    transition: border-color var(--transition);
-  }
-  .name-field input:focus {
-    outline: none;
-    border-color: var(--primary);
-  }
+/* ── Header bar ──────────────────────────────────────────── */
+#header {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .55rem 1rem;
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  box-shadow: var(--shadow);
+}
+#header-title { font-weight: 700; font-size: .9rem; color: var(--muted); white-space: nowrap; }
+#progress-track {
+  flex: 1; min-width: 80px;
+  background: var(--border); border-radius: 4px; height: 7px; overflow: hidden;
+}
+#progress-fill {
+  height: 100%; width: 0%; background: var(--primary);
+  border-radius: 4px; transition: width .4s ease;
+}
+.stat {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: .2rem .7rem;
+  font-size: .85rem; font-weight: 700; white-space: nowrap;
+}
+#feedback {
+  font-size: .88rem; font-weight: 700; padding: .2rem .75rem;
+  border-radius: 20px; opacity: 0; transition: opacity .2s;
+  white-space: nowrap;
+}
+#feedback.show-correct { opacity: 1; background: #dcfce7; color: var(--success); }
+#feedback.show-wrong   { opacity: 1; background: #fee2e2; color: var(--danger); }
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    padding: .7rem 1.6rem;
-    border: none;
-    border-radius: var(--radius);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background var(--transition), transform var(--transition);
-  }
-  .btn:active { transform: scale(.97); }
+/* ── Main layout ─────────────────────────────────────────── */
+#main-area {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: .6rem;
+  flex: 1;
+  min-height: 0;   /* allow flex child to shrink below content size */
+  overflow: hidden;
+}
 
-  .btn-primary {
-    background: var(--primary);
-    color: #fff;
-  }
-  .btn-primary:hover { background: var(--primary-dk); }
+/* Left column (prompt + map) */
+#left-col {
+  display: flex; flex-direction: column; gap: .6rem;
+  min-height: 0; overflow: hidden;
+}
 
-  .btn-ghost {
-    background: var(--surface);
-    color: var(--text);
-    border: 1.5px solid var(--border);
-  }
-  .btn-ghost:hover { background: var(--bg); }
+/* ── Map panel — fills all remaining height in left column ── */
+#map-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: .4rem;
+  flex: 1;        /* grow to fill remaining space */
+  min-height: 0;  /* allow shrink */
+}
+#map-panel svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  /* preserve aspect ratio and fit within container */
+  object-fit: contain;
+}
 
-  .btn-danger {
-    background: #fff;
-    color: var(--danger);
-    border: 1.5px solid var(--danger);
-    font-size: .82rem;
-    padding: .3rem .85rem;
-  }
-  .btn-danger:hover { background: #fee2e2; }
+/* ── SVG district styling ────────────────────────────────── */
 
-  .btn-lg { padding: .9rem 2.4rem; font-size: 1.15rem; }
+/* Non-interactive elements */
+#county-outline { fill: #e2e8f0; stroke: #94a3b8; stroke-width: 1.5; }
+#path13-border  { fill: #cbd5e1; stroke: #94a3b8; stroke-width: .5; pointer-events: none; }
 
-  /* ============================================================
-     LEADERBOARD (shared between start & win screen)
-     ============================================================ */
-  .leaderboard-wrap {
-    width: 100%;
-    max-width: 520px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: .9rem 1rem;
-    box-shadow: var(--shadow);
-  }
+/* All clickable districts — fill applied per-district via JS */
+.district {
+  stroke: #1e40af;
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill .15s;
+}
+.district:hover:not(.done):not(.flash-wrong) { filter: brightness(0.85); }
 
-  .leaderboard-wrap .lb-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: .6rem;
-  }
+/* Correct / locked */
+.district.done {
+  fill: #bbf7d0 !important;
+  stroke: #166534 !important;
+  cursor: default;
+}
 
-  .leaderboard-wrap h3 {
-    font-size: .9rem;
-    font-weight: 700;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .06em;
-  }
+/* Wrong flash */
+.district.flash-wrong { fill: #fca5a5 !important; stroke: #991b1b !important; }
 
-  .leaderboard-wrap table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: .85rem;
-  }
+/* Correct flash animation */
+@keyframes pop-correct {
+  0%   { filter: drop-shadow(0 0 0px #16a34a); }
+  40%  { filter: drop-shadow(0 0 10px #16a34a); }
+  100% { filter: drop-shadow(0 0 0px #16a34a); }
+}
+.district.done { animation: pop-correct .5s ease; }
 
-  .leaderboard-wrap th {
-    text-align: left;
-    padding: .3rem .45rem;
-    border-bottom: 1.5px solid var(--border);
-    color: var(--muted);
-    font-weight: 600;
-  }
+/* ── Prompt card — fixed compact height, never grows ──────── */
+#prompt-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .55rem 1rem;
+  display: flex; flex-direction: row; align-items: center; gap: .9rem;
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+}
+#prompt-label {
+  font-size: .78rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em; white-space: nowrap;
+}
+#logo-wrap {
+  height: 80px; width: 130px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px dashed var(--border); border-radius: 8px;
+  background: var(--bg); overflow: hidden; flex-shrink: 0;
+}
+#logo-img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain; display: block;
+}
+#logo-fallback {
+  font-size: .88rem; font-weight: 700; color: var(--muted);
+  text-align: center; padding: .4rem; display: none;
+}
 
-  .leaderboard-wrap td {
-    padding: .3rem .45rem;
-    border-bottom: 1px solid var(--bg);
-  }
+/* ── Side panel ──────────────────────────────────────────── */
+#side-panel {
+  display: flex; flex-direction: column; gap: .6rem;
+  min-height: 0; overflow: hidden;
+}
 
-  .leaderboard-wrap tbody tr:first-child td {
-    font-weight: 700;
-    color: var(--primary);
-  }
+.panel-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+  box-shadow: var(--shadow);
+}
+.panel-card h3 {
+  font-size: .75rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em; margin-bottom: .5rem;
+}
 
-  .crown-cell { color: #f59e0b; }
+/* District list fills all remaining side-panel height */
+#checklist-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+}
+#district-list {
+  list-style: none;
+  display: flex; flex-direction: column; gap: .22rem;
+  overflow-y: auto; padding-right: 2px;
+  flex: 1; min-height: 0;
+}
+#district-list::-webkit-scrollbar { width: 4px; }
+#district-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+#district-list li {
+  font-size: .8rem; padding: .25rem .45rem;
+  border-radius: 5px; display: flex; align-items: center; gap: .4rem;
+  color: var(--muted); transition: background .15s;
+}
+#district-list li.done {
+  color: var(--success); background: #f0fdf4;
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border); flex-shrink: 0; transition: background .2s;
+}
+#district-list li.done .dot { background: var(--success); }
 
-  /* ============================================================
-     GAME SCREEN
-     ============================================================ */
-  #game-screen {
-    flex-direction: column;
-    min-height: 100vh;
-    padding: .75rem 1rem 1rem;
-    gap: .75rem;
-    max-width: 1280px;
-    margin: 0 auto;
-    width: 100%;
-  }
+/* ══════════════════════════════════════════════════════════
+   WIN SCREEN
+══════════════════════════════════════════════════════════ */
+#win-screen {
+  align-items: center; justify-content: center;
+  padding: 2rem; text-align: center; gap: 1.1rem;
+}
+#win-screen h2 { font-size: 2.2rem; font-weight: 800; }
 
-  /* ---- Top bar ---- */
-  #top-bar {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: .6rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-    box-shadow: var(--shadow);
-  }
+.win-stats { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+.win-stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .9rem 1.6rem;
+  min-width: 110px; box-shadow: var(--shadow);
+}
+.win-stat .val { font-size: 1.9rem; font-weight: 800; color: var(--primary); }
+.win-stat .lbl { font-size: .78rem; color: var(--muted); margin-top: .1rem; }
 
-  #top-bar .bar-title {
-    font-weight: 700;
-    font-size: .95rem;
-    color: var(--muted);
-    white-space: nowrap;
-  }
+/* Leaderboard */
+#leaderboard-wrap {
+  width: 100%; max-width: 500px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  overflow: hidden;
+}
+#leaderboard-wrap .lb-head {
+  padding: .75rem 1.1rem .5rem;
+  font-size: .8rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+#lb-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+#lb-table th {
+  text-align: left; padding: .45rem 1.1rem;
+  border-bottom: 1px solid var(--border); color: var(--muted);
+  font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+}
+#lb-table td { padding: .55rem 1.1rem; border-bottom: 1px solid var(--bg); }
+/* Gold / silver / bronze rows */
+#lb-table tbody tr:nth-child(1) td { font-weight: 700; color: #b45309; background: #fffbeb; }
+#lb-table tbody tr:nth-child(2) td { font-weight: 600; color: #475569; background: #f8fafc; }
+#lb-table tbody tr:nth-child(3) td { font-weight: 600; color: #7c5228; background: #fdf8f3; }
+#lb-table .rank-cell { font-size: 1rem; }
+/* "This run" highlight */
+#lb-table tbody tr.this-run td { background: #eff6ff !important; color: var(--primary) !important; font-weight: 700; }
 
-  #top-bar .spacer { flex: 1; }
 
-  .stat-pill {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: .25rem .75rem;
-    font-size: .88rem;
-    font-weight: 600;
-    white-space: nowrap;
-  }
+/* Added upgrades */
+.name-field {
+  display:flex; flex-direction:column; align-items:center; gap:.35rem;
+  width:100%; max-width:260px;
+}
+.name-field label {
+  font-size:.88rem; font-weight:600; color:var(--muted);
+}
+.name-field input {
+  width:100%; padding:.6rem .9rem; border:1.5px solid var(--border);
+  border-radius:var(--radius); background:var(--surface); color:var(--text);
+  text-align:center; font-size:1rem;
+}
+.name-field input:focus { outline:none; border-color:var(--primary); }
 
-  #feedback-msg {
-    font-size: .9rem;
-    font-weight: 600;
-    padding: .25rem .75rem;
-    border-radius: 20px;
-    opacity: 0;
-    transition: opacity .2s;
-  }
-  #feedback-msg.show { opacity: 1; }
-  #feedback-msg.correct { background: #dcfce7; color: var(--success); }
-  #feedback-msg.wrong   { background: #fee2e2; color: var(--danger); }
+.btn-danger {
+  background:#fff; color:var(--danger); border:1.5px solid var(--danger);
+}
+.btn-danger:hover { background:#fee2e2; }
 
-  /* ---- Progress bar ---- */
-  #progress-wrap {
-    background: var(--border);
-    border-radius: 4px;
-    height: 6px;
-    width: 100%;
-    overflow: hidden;
-  }
-  #progress-fill {
-    height: 100%;
-    background: var(--primary);
-    border-radius: 4px;
-    transition: width .4s ease;
-    width: 0%;
-  }
+.leaderboard-wrap {
+  width:100%; max-width:560px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.leaderboard-wrap .lb-header {
+  padding:.75rem 1rem .55rem;
+  display:flex; align-items:center; justify-content:space-between; gap:.8rem;
+  border-bottom:1px solid var(--border);
+}
+.leaderboard-wrap .lb-header h3 {
+  font-size:.82rem; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.07em;
+}
+.leaderboard-wrap table { width:100%; border-collapse:collapse; font-size:.88rem; }
+.leaderboard-wrap th {
+  text-align:left; padding:.45rem .8rem; border-bottom:1px solid var(--border);
+  color:var(--muted); font-size:.76rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+}
+.leaderboard-wrap td { padding:.5rem .8rem; border-bottom:1px solid var(--bg); }
+.leaderboard-wrap tbody tr:first-child td { font-weight:700; color:var(--primary); }
+.crown-cell, .crown { color:#d97706; }
+#district-list li .crown { margin-left:auto; font-size:.95rem; }
 
-  /* ---- Main layout ---- */
-  #main-layout {
-    display: grid;
-    grid-template-columns: 1fr 260px;
-    gap: .75rem;
-    flex: 1;
-  }
+#stat-player { display:none; }
 
-  /* ---- Prompt card ---- */
-  #prompt-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem 1.25rem 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .6rem;
-    box-shadow: var(--shadow);
-  }
+.map-logo-overlay { pointer-events:none; }
 
-  #prompt-label {
-    font-size: .8rem;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .06em;
-  }
+@media (min-width: 861px) {
+  #stat-player { display:inline-flex; }
+}
 
-  #prompt-logo-wrap {
-    width: 100%;
-    max-width: 280px;
-    height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1.5px dashed var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--bg);
-  }
-
-  #prompt-logo {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    display: block;
-  }
-
-  #prompt-fallback {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--muted);
-    text-align: center;
-    padding: .5rem;
-    display: none;
-  }
-
-  /* ---- Map container ---- */
-  #map-container {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    display: flex;
-    align-items: stretch;
-    box-shadow: var(--shadow);
-    flex-direction: column;
-  }
-
-  #map-container svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    min-height: 400px;
-  }
-
-  /* ---- District regions (SVG) ---- */
-  .district-region {
-    cursor: pointer;
-    transition: filter var(--transition);
-  }
-
-  /* Each district gets its own fill color via JS; stroke stays consistent */
-  .district-region path,
-  .district-region polygon,
-  .district-region rect {
-    stroke: #1d4ed8;
-    stroke-width: 1.5;
-    transition: fill var(--transition);
-  }
-
-  .district-region:hover:not(.completed):not(.wrong-flash) {
-    filter: brightness(0.82);
-  }
-
-  .district-region.completed path,
-  .district-region.completed polygon,
-  .district-region.completed rect {
-    fill: #bbf7d0 !important;
-    stroke: #15803d;
-    cursor: default;
-  }
-
-  .district-region.wrong-flash path,
-  .district-region.wrong-flash polygon,
-  .district-region.wrong-flash rect {
-    fill: #fecaca !important;
-    stroke: #dc2626;
-  }
-
-  /* SVG text labels */
-  .district-region text {
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 9px;
-    fill: #1e293b;
-    pointer-events: none;
-    user-select: none;
-  }
-
-  /* Logo overlay inside SVG on correct */
-  .map-logo-overlay {
-    pointer-events: none;
-  }
-
-  /* ---- Sidebar ---- */
-  #sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: .75rem;
-  }
-
-  .sidebar-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: .85rem 1rem;
-    box-shadow: var(--shadow);
-  }
-
-  .sidebar-card h3 {
-    font-size: .8rem;
-    font-weight: 700;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    margin-bottom: .6rem;
-  }
-
-  #district-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: .3rem;
-    max-height: 420px;
-    overflow-y: auto;
-    padding-right: 2px;
-  }
-
-  #district-list::-webkit-scrollbar { width: 4px; }
-  #district-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-  #district-list li {
-    font-size: .82rem;
-    padding: .28rem .5rem;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    gap: .45rem;
-    color: var(--muted);
-    transition: background .15s;
-  }
-
-  #district-list li.done {
-    color: var(--success);
-    background: #f0fdf4;
-  }
-
-  #district-list li .check {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border: 1.5px solid var(--border);
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  #district-list li.done .check {
-    background: var(--success);
-    border-color: var(--success);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6l3 3 5-5' stroke='white' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-size: contain;
-  }
-
-  #district-list li .crown {
-    color: #f59e0b;
-    font-size: .9rem;
-    margin-left: auto;
-  }
-
-  /* ============================================================
-     WIN SCREEN
-     ============================================================ */
-  #win-screen {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
-    text-align: center;
-    gap: 1.2rem;
-  }
-
-  #win-screen h2 { font-size: 2.2rem; font-weight: 800; }
-
-  .win-stats {
-    display: flex;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .win-stat {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem 1.8rem;
-    min-width: 130px;
-    box-shadow: var(--shadow);
-  }
-
-  .win-stat .val {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--primary);
-  }
-
-  .win-stat .lbl {
-    font-size: .82rem;
-    color: var(--muted);
-    margin-top: .15rem;
-  }
-
-  /* ---- Animations ---- */
-  @keyframes pulse-correct {
-    0%   { filter: drop-shadow(0 0 0px #16a34a); }
-    50%  { filter: drop-shadow(0 0 8px #16a34a); }
-    100% { filter: drop-shadow(0 0 0px #16a34a); }
-  }
-
-  .district-region.completed {
-    animation: pulse-correct .5s ease;
-  }
-
-  /* ---- Responsive ---- */
-  @media (max-width: 768px) {
-    #main-layout {
-      grid-template-columns: 1fr;
-    }
-    #sidebar { display: none; }
-  }
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 860px) {
+  #main-area { grid-template-columns: 1fr; }
+  #side-panel { display: none; }
+  #prompt-card { flex-direction: row; }
+}
+@media (max-width: 480px) {
+  #header { gap: .4rem; }
+  #header-title { display: none; }
+  #prompt-card { padding: .4rem .6rem; }
+  #logo-wrap { height: 64px; width: 100px; }
+  #game-screen { padding: .4rem; gap: .4rem; }
+}
 </style>
 </head>
 <body>
 
-<!-- ============================================================
-     HTML STRUCTURE
-     ============================================================ -->
-
-<!-- ==================== START SCREEN ==================== -->
+<!-- ══════════════════════════════════════════════════════════
+     START SCREEN
+══════════════════════════════════════════════════════════ -->
 <div id="start-screen" class="screen active">
-  <div class="logo-mark">🗺️</div>
-  <h1>Schuylkill County<br>School Districts Quiz</h1>
-  <p class="tagline">A district logo will appear. Click the matching region on the map to score points. Work through all districts as fast as you can!</p>
-
-  <div class="name-field">
-    <label for="player-name-input">Your Name</label>
-    <input type="text" id="player-name-input" placeholder="Enter your name" maxlength="24" autocomplete="off">
+  <div class="icon">🗺️</div>
+  <h1>Schuylkill County<br>School Districts</h1>
+  <p>A school district logo will appear. Click the matching region on the map to score points. Get them all as fast as you can. First-try correct answers earn a crown.</p>
+  <div class="card">
+    <h3>How to play</h3>
+    <ul>
+      <li>Study the logo shown in the panel</li>
+      <li>Click the matching district on the map</li>
+      <li>Wrong clicks flash red — keep trying!</li>
+      <li>Correct districts lock green and show their logo</li>
+    </ul>
   </div>
-
+  <div class="name-field">
+    <label for="player-name">Your Name</label>
+    <input id="player-name" type="text" maxlength="24" placeholder="Enter your name" autocomplete="off">
+  </div>
   <button class="btn btn-primary btn-lg" id="btn-start">Start Game</button>
 
-  <!-- Leaderboard on start screen -->
   <div class="leaderboard-wrap" id="start-leaderboard-wrap">
     <div class="lb-header">
-      <h3>Leaderboard</h3>
-      <button class="btn btn-danger" id="btn-reset-lb-start">Reset</button>
+      <h3>🏆 Leaderboard</h3>
+      <button class="btn btn-danger" id="btn-reset-start" style="padding:.25rem .7rem;font-size:.8rem;">Reset</button>
     </div>
     <table>
       <thead>
-        <tr><th>#</th><th>Name</th><th>Score</th><th>Time</th><th>Accuracy</th><th>Crowns</th></tr>
+        <tr><th>Rank</th><th>Name</th><th>Score</th><th>Time</th><th>Accuracy</th><th>Crowns</th></tr>
       </thead>
-      <tbody id="start-leaderboard-body"></tbody>
+      <tbody id="start-lb-body"></tbody>
     </table>
   </div>
 </div>
 
-<!-- ==================== GAME SCREEN ==================== -->
+<!-- ══════════════════════════════════════════════════════════
+     GAME SCREEN
+══════════════════════════════════════════════════════════ -->
 <div id="game-screen" class="screen">
 
-  <!-- Top bar -->
-  <div id="top-bar">
-    <span class="bar-title">Schuylkill County Districts</span>
-    <div id="progress-wrap"><div id="progress-fill"></div></div>
-    <div class="spacer"></div>
-    <span class="stat-pill" id="stat-player"></span>
-    <span class="stat-pill" id="stat-score">Score: 0</span>
-    <span class="stat-pill" id="stat-progress">0 / 0</span>
-    <span class="stat-pill" id="stat-timer">0:00</span>
-    <span id="feedback-msg"></span>
+  <!-- Header -->
+  <div id="header">
+    <span id="header-title">Schuylkill County Districts</span>
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <span class="stat" id="stat-player">👤 Player</span>
+    <span class="stat" id="stat-score">Score: 0</span>
+    <span class="stat" id="stat-progress">0 / 12</span>
+    <span class="stat" id="stat-timer">0:00</span>
+    <span id="feedback"></span>
   </div>
 
-  <!-- Main layout: map + sidebar -->
-  <div id="main-layout">
+  <!-- Main -->
+  <div id="main-area">
 
-    <!-- Left: prompt + map -->
-    <div style="display:flex;flex-direction:column;gap:.75rem;">
+    <!-- Map + prompt stacked in left column -->
+    <div id="left-col">
 
-      <!-- Prompt card -->
+      <!-- Logo prompt -->
       <div id="prompt-card">
         <div id="prompt-label">Which district has this logo?</div>
-        <div id="prompt-logo-wrap">
-          <img id="prompt-logo" src="" alt="District logo">
-          <div id="prompt-fallback"></div>
+        <div id="logo-wrap">
+          <img id="logo-img" src="" alt="">
+          <div id="logo-fallback"></div>
         </div>
       </div>
 
-      <!-- Map -->
-      <div id="map-container">
-        <!-- ============================================================
-             REPLACE SVG MAP
-             Replace everything inside this comment block with your
-             real SVG map. Keep the outer <svg> tag attributes.
-             Each district must be: <g id="DISTRICT-ID" class="district-region">
-             The id must match a district's `id` in the DISTRICT DATA below.
-             ============================================================ -->
-        <svg id="district-map"
-             viewBox="0 0 700 520"
-             xmlns="http://www.w3.org/2000/svg"
-             xmlns:xlink="http://www.w3.org/1999/xlink"
-             aria-label="Schuylkill County school district map">
+      <!-- SVG Map -->
+      <div id="map-panel">
+        <svg viewBox="0 0 492 290" xmlns="http://www.w3.org/2000/svg" aria-label="Schuylkill County school district map">
 
-          <defs>
-            <style>
-              /* Inline SVG styles — override in main CSS above if needed */
-              .region-label { font: bold 9px 'Segoe UI', sans-serif; fill: #1e293b; pointer-events:none; }
-            </style>
-          </defs>
+          <!-- County outline (background shape) -->
+          <path id="county-outline"
+            d="M 469.29128,137.2067 431.26633,105.20237 388.17138,64.008669 366.94078,40.559948 353.94893,25.349968 338.42207,31.68746 253.81655,2.8518714 216.74222,42.461196 205.33474,94.111755 15.209981,182.83664 144.49482,287.72213 l 33.5887,-10.13998 16.16061,-4.11937 44.99619,-1.58438 9.50624,-6.65436 10.13999,0.31687 3.48562,-4.75312 8.87249,1.90125 12.04123,-9.82311 22.4981,-9.82311 9.82311,0.31687 7.28811,-10.13999 4.43625,3.8025 4.11937,-6.97124 5.38687,6.65436 4.43624,-2.21812 4.11937,3.8025 11.09061,-42.4612 66.22679,-32.00433 5.38687,-0.95063 29.46934,-19.01247 1.90125,-4.43625 3.16874,0.63375 z"/>
 
-          <!-- Background -->
-          <rect width="700" height="520" fill="#e8edf2"/>
+          <!-- Decorative border region (no district) -->
+          <path id="path13-border"
+            d="m 218.06466,41.348604 35.19554,0.246123 2.95347,10.091028 11.07552,15.751849 13.29062,-8.36817 16.98246,-2.461226 3.1996,3.937962 36.67227,-8.36817 1.72286,6.153066 25.10451,-4.184085 2.2151,-4.67633 7.13756,-1.476736 -18.70532,-21.41267 -15.99797,6.645312 -85.40456,-31.0114532 z"/>
 
-          <!-- =====================================================
-               PLACEHOLDER DISTRICT REGIONS
-               These are approximate rectangular stand-ins.
-               Replace this entire <g id="district-regions"> block
-               with your actual SVG path data.
-               ===================================================== -->
-          <g id="district-regions">
+          <!-- ─────────────────────────────────────────────────────
+               DISTRICT REGIONS
+               Each path has class="district" and an id matching
+               the DISTRICTS array in the JS below.
+               ───────────────────────────────────────────────────── -->
 
-            <!-- Row 1 (top) -->
-            <g id="blue-mountain" class="district-region">
-              <rect x="20"  y="20"  width="160" height="100" rx="4"/>
-              <text x="100" y="76"  text-anchor="middle" class="region-label">Blue Mountain</text>
-            </g>
+          <path class="district" id="shenandoah"
+            d="m 221.51038,88.604151 44.5482,-22.643283 4.67633,14.275113 -5.66082,0.246123 0.49224,5.906943 -9.59878,1.230614 1.23061,6.399188 8.86042,13.290621 -18.95145,7.6298 -3.69184,-4.67633 3.1996,-0.73836 -2.70735,-6.64532 12.55225,-4.430203 -1.96898,-3.937962 -21.16655,5.414698 z"/>
 
-            <g id="tamaqua-area" class="district-region">
-              <rect x="190" y="20"  width="160" height="100" rx="4"/>
-              <text x="270" y="76"  text-anchor="middle" class="region-label">Tamaqua Area</text>
-            </g>
+          <path class="district" id="mahanoy"
+            d="m 297.26294,56.658472 -17.65726,3.104574 -12.4183,6.791255 3.29861,13.388475 -4.65686,0.582107 0.19404,5.433005 -9.70179,1.746322 0.5821,6.403184 -24.64255,5.821076 3.88072,4.8509 22.89623,-6.791259 7.5674,9.701789 -20.76184,6.40319 68.10659,-0.58211 28.91134,-14.358654 -2.52247,-5.62704 -7.17932,-5.821076 2.7165,-6.791255 -2.91054,-2.32843 4.26879,-6.015112 -6.40318,-7.567399 21.73201,-8.731614 -13.58251,1.358252 -0.97018,-6.209148 -37.25488,8.537578 z"/>
 
-            <g id="tri-valley" class="district-region">
-              <rect x="360" y="20"  width="160" height="100" rx="4"/>
-              <text x="440" y="76"  text-anchor="middle" class="region-label">Tri-Valley</text>
-            </g>
+          <path class="district" id="tamaqua"
+            d="m 374.0757,47.392124 -7.73606,2.216369 -2.7753,4.509863 -10.92774,2.081475 -22.02895,8.84627 6.93825,8.499357 -4.50986,4.856776 2.7753,3.122213 -2.94876,6.417882 6.93825,5.724056 3.12221,6.07097 -31.39558,14.917235 15.43761,44.57827 46.13937,-13.00922 30.35484,27.05917 19.08019,-10.06046 7.80553,-0.86728 18.90674,-11.96848 9.71355,-8.15245 0.52037,-2.08147 8.84627,-2.7753 -5.03023,-6.24443 -22.20241,-16.82526 -36.25236,-30.875214 z"/>
 
-            <g id="pine-grove-area" class="district-region">
-              <rect x="530" y="20"  width="150" height="100" rx="4"/>
-              <text x="605" y="76"  text-anchor="middle" class="region-label">Pine Grove Area</text>
-            </g>
+          <path class="district" id="north-schuykill"
+            d="m 135.85393,128.50101 5.25208,-3.15125 24.50973,0.70028 3.85153,5.60222 0.70028,-4.5518 2.10084,-2.10084 11.55458,17.15681 14.3557,2.80111 25.91029,-25.21 15.05597,-9.10362 6.30251,-1.05041 -2.10084,-7.00278 -7.00278,2.10083 -15.05598,-16.456533 44.8178,-22.058757 -9.8039,-14.705838 -3.15125,-9.803892 -35.71417,0.700278 -11.20445,53.221128 z"/>
 
-            <!-- Row 2 -->
-            <g id="north-schuylkill" class="district-region">
-              <rect x="20"  y="130" width="160" height="100" rx="4"/>
-              <text x="100" y="186" text-anchor="middle" class="region-label">North Schuylkill</text>
-            </g>
+          <path class="district" id="saint-clair"
+            d="m 223.89531,119.93096 10.88632,24.31278 -0.72575,8.70905 24.13134,-2.90301 8.89049,11.97495 9.97913,-6.53179 3.99165,11.24919 9.07194,-5.80603 3.08445,7.43898 33.38472,-9.25337 -15.24085,-45.35967 -65.31792,0.36288 -2.90302,-3.99165 z"/>
 
-            <g id="williams-valley" class="district-region">
-              <rect x="190" y="130" width="160" height="100" rx="4"/>
-              <text x="270" y="186" text-anchor="middle" class="region-label">Williams Valley</text>
-            </g>
+          <path class="district" id="pottsville"
+            d="m 235.32595,152.0456 23.22415,-2.17726 7.43898,11.97495 10.16057,-6.35035 5.08028,11.06775 -17.41811,7.07611 -0.54432,5.08029 -5.44316,2.3587 -1.81438,-4.35453 -14.87797,5.80604 -0.9072,-8.52762 h -4.17309 l -5.6246,-5.6246 4.35453,-4.35453 -5.6246,-2.72158 z"/>
 
-            <g id="mahanoy-area" class="district-region">
-              <rect x="360" y="130" width="160" height="100" rx="4"/>
-              <text x="440" y="186" text-anchor="middle" class="region-label">Mahanoy Area</text>
-            </g>
+          <path class="district" id="minersville"
+            d="m 182.86912,141.52052 -31.25757,29.04247 10.33715,9.84491 11.56776,-2.95348 6.64531,16.49022 -10.33715,4.18409 20.42818,17.96695 21.41267,-9.35266 10.58328,-7.38368 16.49021,-4.67633 -2.46122,-4.43021 8.12204,-3.69184 -3.69184,-4.92245 -0.49224,-7.38368 -3.93796,-0.49224 -5.66082,-5.66083 3.69184,-3.69184 -5.16858,-2.95347 5.4147,-8.36817 0.49224,-9.10653 -11.81388,-24.12002 -25.10451,25.35063 z"/>
 
-            <g id="shenandoah-valley" class="district-region">
-              <rect x="530" y="130" width="150" height="100" rx="4"/>
-              <text x="605" y="186" text-anchor="middle" class="region-label">Shenandoah Valley</text>
-            </g>
+          <path class="district" id="schuylkill-haven"
+            d="m 278.10299,255.2004 -20.85772,-38.85263 9.8154,-4.49872 -2.45385,-7.77053 2.04488,-6.5436 1.6359,-2.45385 7.77052,5.31668 -3.2718,9.40642 9.8154,-6.13462 5.31667,2.45385 -1.22692,-4.08975 4.9077,-2.45385 2.86282,3.2718 h 3.2718 l 3.2718,-2.45385 -0.40897,10.22437 h -4.08975 l 0.84931,3.59447 -0.72087,4.44533 1.56188,1.56187 -3.24389,3.12374 3.8446,3.0036 3.84461,-2.64317 2.16259,3.96475 4.68561,1.0813 0.96115,2.52302 4.9259,0.24029 2.16259,-0.24029 -1.44172,-4.32518 2.16259,-3.12375 4.20504,1.68202 1.08129,7.80935 -9.73166,9.97195 -11.17338,1.08129 z"/>
 
-            <!-- Row 3 -->
-            <g id="pottsville-area" class="district-region">
-              <rect x="20"  y="240" width="160" height="100" rx="4"/>
-              <text x="100" y="296" text-anchor="middle" class="region-label">Pottsville Area</text>
-            </g>
+          <path class="district" id="tri-valley"
+            d="m 16.456533,183.82297 44.467652,36.7646 72.478775,-18.55737 -0.70028,-3.85153 9.45375,-2.10083 18.90751,-16.1064 -9.45376,-9.10361 31.86265,-29.76182 -10.50417,-15.40611 -3.50139,5.60222 -4.20166,-3.85153 -24.50973,-1.40055 -63.375162,29.41167 z"/>
 
-            <g id="schuylkill-haven-area" class="district-region">
-              <rect x="190" y="240" width="160" height="100" rx="4"/>
-              <text x="270" y="296" text-anchor="middle" class="region-label">Schuylkill Haven Area</text>
-            </g>
+          <path class="district" id="williams-valley"
+            d="m 61.624463,220.93771 30.462093,22.75903 17.506954,-7.70306 9.80389,-10.15403 12.25486,-12.25486 5.25209,0.70027 -4.20167,-12.25486 z"/>
 
-            <g id="saint-clair-area" class="district-region">
-              <rect x="360" y="240" width="160" height="100" rx="4"/>
-              <text x="440" y="296" text-anchor="middle" class="region-label">Saint Clair Area</text>
-            </g>
+          <path class="district" id="pine-grove"
+            d="m 92.086556,244.74716 51.820574,43.06709 9.45375,-1.05041 19.60778,-8.0532 21.70862,-5.60222 26.26043,-0.35014 18.55736,-2.10084 -29.06153,-63.72529 -21.35848,8.75347 -18.90751,-17.85709 9.80389,-4.20167 -6.65264,-16.45653 -14.00556,3.50139 -17.50695,15.75626 -9.80389,2.10083 4.90195,16.45653 -5.95237,-1.05041 -21.35847,21.70861 z"/>
 
-            <g id="minersville-area" class="district-region">
-              <rect x="530" y="240" width="150" height="100" rx="4"/>
-              <text x="605" y="296" text-anchor="middle" class="region-label">Minersville Area</text>
-            </g>
-
-            <!-- Row 4 (bottom) — private/non-public districts for optional inclusion -->
-            <g id="panther-valley" class="district-region">
-              <rect x="20"  y="350" width="160" height="100" rx="4"/>
-              <text x="100" y="406" text-anchor="middle" class="region-label">Panther Valley</text>
-            </g>
-
-            <g id="marian-catholic" class="district-region">
-              <rect x="190" y="350" width="160" height="100" rx="4"/>
-              <text x="270" y="406" text-anchor="middle" class="region-label">Marian Catholic</text>
-            </g>
-
-            <g id="nativity-bvm" class="district-region">
-              <rect x="360" y="350" width="160" height="100" rx="4"/>
-              <text x="440" y="406" text-anchor="middle" class="region-label">Nativity BVM</text>
-            </g>
-
-            <!-- Optional: Hamburg Area — uncomment if including -->
-            <!--
-            <g id="hamburg-area" class="district-region">
-              <rect x="530" y="350" width="150" height="100" rx="4"/>
-              <text x="605" y="406" text-anchor="middle" class="region-label">Hamburg Area</text>
-            </g>
-            -->
-
-          </g>
-          <!-- end #district-regions -->
+          <path class="district" id="blue-mountain"
+            d="m 210.43354,206.93215 29.06153,64.42557 7.35292,-5.95236 11.20445,-0.35014 5.60222,-4.20167 7.35292,2.10083 5.25209,-4.20166 1.75069,-2.80111 -21.00834,-39.91585 9.80389,-4.20167 -3.15125,-8.40333 4.55181,-8.75348 8.0532,5.95236 -3.50139,9.10362 10.15403,-5.60223 4.20167,1.7507 -0.70028,-3.85153 5.25208,-2.80111 3.15125,3.15125 2.45098,0.70028 3.50139,-2.80112 -0.35014,11.20445 -3.85153,-0.35014 -0.70028,8.0532 0.98014,-0.53437 1.36841,1.66164 -3.32328,3.22554 3.71426,2.93231 4.00749,-2.63908 2.05262,4.20298 4.4962,0.78195 1.17293,2.63908 h 7.23303 l -1.46615,-4.59395 2.34585,-3.03006 4.00749,1.85713 1.27066,7.42852 4.39847,3.51878 2.34585,-2.83457 -0.0977,-2.63908 6.35334,3.90975 4.10523,-0.8797 3.1278,3.1278 4.54961,-5.47415 7.38368,-35.44166 47.25555,-22.39716 -30.27309,-27.31962 -79.74373,21.6588 -3.1996,-6.64531 -8.86041,4.67633 -17.47471,6.89143 v 5.16858 l -6.15307,2.70734 -1.47673,-4.18408 -15.01348,5.16858 4.4302,4.92245 -8.86041,3.69184 1.72286,3.93796 -15.75185,4.43021 z"/>
 
         </svg>
-        <!-- end REPLACE SVG MAP -->
       </div>
     </div>
 
     <!-- Right: sidebar -->
-    <div id="sidebar">
-      <div class="sidebar-card">
+    <div id="side-panel">
+      <!-- Score card -->
+      <div class="panel-card">
+        <h3>Stats</h3>
+        <div style="display:flex;flex-direction:column;gap:.35rem;">
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Score</span>
+            <span id="sb-score" style="font-weight:700">0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Found</span>
+            <span id="sb-found" style="font-weight:700">0 / 12</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Accuracy</span>
+            <span id="sb-accuracy" style="font-weight:700">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Time</span>
+            <span id="sb-timer" style="font-weight:700">0:00</span>
+          </div>
+        </div>
+      </div>
+      <!-- District checklist -->
+      <div class="panel-card" id="checklist-card">
         <h3>Districts</h3>
-        <ul id="district-list">
-          <!-- Populated by JS -->
-        </ul>
+        <ul id="district-list"></ul>
       </div>
     </div>
 
-  </div><!-- end #main-layout -->
-</div><!-- end #game-screen -->
+  </div><!-- /main-area -->
+</div><!-- /game-screen -->
 
-<!-- ==================== WIN SCREEN ==================== -->
+<!-- ══════════════════════════════════════════════════════════
+     WIN SCREEN
+══════════════════════════════════════════════════════════ -->
 <div id="win-screen" class="screen">
   <div style="font-size:3rem">🎉</div>
-  <h2>Nice work!</h2>
-  <p style="color:var(--muted);max-width:360px">You identified all Schuylkill County school districts.</p>
+  <h2>All districts found!</h2>
+  <p style="color:var(--muted);max-width:340px">You identified every Schuylkill County school district.</p>
   <div class="win-stats">
-    <div class="win-stat">
-      <div class="val" id="win-score">0</div>
-      <div class="lbl">Final Score</div>
-    </div>
-    <div class="win-stat">
-      <div class="val" id="win-time">0:00</div>
-      <div class="lbl">Total Time</div>
-    </div>
-    <div class="win-stat">
-      <div class="val" id="win-accuracy">0%</div>
-      <div class="lbl">Accuracy</div>
-    </div>
-    <div class="win-stat">
-      <div class="val" id="win-crowns">0</div>
-      <div class="lbl">Crowns 👑</div>
-    </div>
+    <div class="win-stat"><div class="val" id="w-score">0</div><div class="lbl">Score</div></div>
+    <div class="win-stat"><div class="val" id="w-time">0:00</div><div class="lbl">Time</div></div>
+    <div class="win-stat"><div class="val" id="w-accuracy">0%</div><div class="lbl">Accuracy</div></div>
+    <div class="win-stat"><div class="val" id="w-crowns">0</div><div class="lbl">Crowns 👑</div></div>
   </div>
-
-  <!-- Leaderboard on win screen -->
-  <div class="leaderboard-wrap" id="win-leaderboard-wrap">
+  <div class="leaderboard-wrap" id="leaderboard-wrap">
     <div class="lb-header">
-      <h3>Leaderboard</h3>
-      <button class="btn btn-danger" id="btn-reset-lb-win">Reset</button>
+      <h3>🏆 Leaderboard</h3>
+      <button class="btn btn-danger" id="btn-clear-lb" style="padding:.25rem .7rem;font-size:.8rem;">Reset</button>
     </div>
-    <table>
+    <table id="lb-table">
       <thead>
-        <tr><th>#</th><th>Name</th><th>Score</th><th>Time</th><th>Accuracy</th><th>Crowns</th></tr>
+        <tr>
+          <th style="width:3rem">Rank</th>
+          <th>Name</th>
+          <th>Score</th>
+          <th>Time</th>
+          <th>Accuracy</th>
+          <th>Crowns</th>
+        </tr>
       </thead>
-      <tbody id="win-leaderboard-body"></tbody>
+      <tbody id="lb-body"></tbody>
     </table>
   </div>
-
   <button class="btn btn-primary btn-lg" id="btn-restart">Play Again</button>
 </div>
 
-<!-- ============================================================
-     JAVASCRIPT
-     ============================================================ -->
 <script>
 'use strict';
 
-/* ============================================================
+/* ══════════════════════════════════════════════════════════
    DISTRICT DATA
-   ============================================================
-   HOW TO EDIT:
-   - Change `name` to the display name of the district
-   - Change `id` to match the id of the <g> element in the SVG above
-   - Change `logo` to the path of the logo image file
-   - Change `alt` to a descriptive alt text for the logo
-   - Change `color` to a CSS hex color for the map region
-   - To REMOVE a district: delete its entire {} block (and the comma before it)
-   - To ADD a district: copy a block, paste it, and update all fields
-
-   NOTE: If you decide not to include Marian Catholic, Nativity BVM,
-   or Panther Valley (private/regional), simply remove those entries.
-   If you want Hamburg Area, uncomment it AND uncomment the SVG region above.
-   ============================================================ */
+   id        → must match the SVG path id above
+   name      → display name
+   logo      → path to logo image (relative to this HTML file)
+   alt       → alt text for the image
+══════════════════════════════════════════════════════════ */
 const DISTRICTS = [
-  {
-    id:    "blue-mountain",
-    name:  "Blue Mountain",
-    logo:  "logos/blue-mountain.png",
-    alt:   "Blue Mountain School District logo",
-    color: "#a8c8f0"   // steel blue
-  },
-  {
-    id:    "mahanoy-area",
-    name:  "Mahanoy Area",
-    logo:  "logos/mahanoy-area.png",
-    alt:   "Mahanoy Area School District logo",
-    color: "#f0c08a"   // amber
-  },
-  {
-    id:    "minersville-area",
-    name:  "Minersville Area",
-    logo:  "logos/minersville-area.png",
-    alt:   "Minersville Area School District logo",
-    color: "#b8a5f0"   // lavender
-  },
-  {
-    id:    "north-schuylkill",
-    name:  "North Schuylkill",
-    logo:  "logos/north-schuylkill.png",
-    alt:   "North Schuylkill School District logo",
-    color: "#a5d8a5"   // sage green
-  },
-  {
-    id:    "pine-grove-area",
-    name:  "Pine Grove Area",
-    logo:  "logos/pine-grove-area.png",
-    alt:   "Pine Grove Area School District logo",
-    color: "#f0e08a"   // yellow
-  },
-  {
-    id:    "pottsville-area",
-    name:  "Pottsville Area",
-    logo:  "logos/pottsville-area.png",
-    alt:   "Pottsville Area School District logo",
-    color: "#f0a5b8"   // rose
-  },
-  {
-    id:    "saint-clair-area",
-    name:  "Saint Clair Area",
-    logo:  "logos/saint-clair-area.png",
-    alt:   "Saint Clair Area School District logo",
-    color: "#a5e8f0"   // sky
-  },
-  {
-    id:    "schuylkill-haven-area",
-    name:  "Schuylkill Haven Area",
-    logo:  "logos/schuylkill-haven-area.png",
-    alt:   "Schuylkill Haven Area School District logo",
-    color: "#f0b8a5"   // salmon
-  },
-  {
-    id:    "shenandoah-valley",
-    name:  "Shenandoah Valley",
-    logo:  "logos/shenandoah-valley.png",
-    alt:   "Shenandoah Valley School District logo",
-    color: "#d4a5f0"   // purple
-  },
-  {
-    id:    "tamaqua-area",
-    name:  "Tamaqua Area",
-    logo:  "logos/tamaqua-area.png",
-    alt:   "Tamaqua Area School District logo",
-    color: "#a5f0d4"   // mint
-  },
-  {
-    id:    "tri-valley",
-    name:  "Tri-Valley",
-    logo:  "logos/tri-valley.png",
-    alt:   "Tri-Valley School District logo",
-    color: "#f0d4a5"   // peach
-  },
-  {
-    id:    "williams-valley",
-    name:  "Williams Valley",
-    logo:  "logos/williams-valley.png",
-    alt:   "Williams Valley School District logo",
-    color: "#c8f0a5"   // lime
-  },
-  /* --- Private / non-public schools below ---
-       Remove these entries if you only want public school districts */
-  {
-    id:    "marian-catholic",
-    name:  "Marian Catholic",
-    logo:  "logos/marian-catholic.png",
-    alt:   "Marian Catholic logo",
-    color: "#f0a5e8"   // pink
-  },
-  {
-    id:    "nativity-bvm",
-    name:  "Nativity BVM",
-    logo:  "logos/nativity-bvm.png",
-    alt:   "Nativity BVM logo",
-    color: "#e8d4a5"   // tan
-  },
-  {
-    id:    "panther-valley",
-    name:  "Panther Valley",
-    logo:  "logos/panther-valley.png",
-    alt:   "Panther Valley School District logo",
-    color: "#a5c8e8"   // cornflower
-  },
-  /* --- Optional: Hamburg Area (straddles Berks/Schuylkill) ---
-     Uncomment if you want to include it, and uncomment its SVG region too.
-  {
-    id:    "hamburg-area",
-    name:  "Hamburg Area",
-    logo:  "logos/hamburg-area.png",
-    alt:   "Hamburg Area School District logo",
-    color: "#e8a5a5"
-  },
-  */
+  { id: 'blue-mountain',    name: 'Blue Mountain',          logo: 'logos/bluemountainsign.jpg',      alt: 'Blue Mountain School District logo',        color: '#a8c8f0' },
+  { id: 'mahanoy',          name: 'Mahanoy Area',           logo: 'logos/mahanoysign.jpg',            alt: 'Mahanoy Area School District logo',         color: '#f0c08a' },
+  { id: 'minersville',      name: 'Minersville Area',       logo: 'logos/minerssign.jpg',             alt: 'Minersville Area School District logo',     color: '#b8a5f0' },
+  { id: 'north-schuykill',  name: 'North Schuylkill',       logo: 'logos/northschuylkillsign.jpg',    alt: 'North Schuylkill School District logo',     color: '#a5d8a5' },
+  { id: 'pine-grove',       name: 'Pine Grove Area',        logo: 'logos/pinegrovesign.jpg',          alt: 'Pine Grove Area School District logo',      color: '#f0e08a' },
+  { id: 'pottsville',       name: 'Pottsville Area',        logo: 'logos/pottsvilleareasign.jpg',     alt: 'Pottsville Area School District logo',      color: '#f0a5b8' },
+  { id: 'saint-clair',      name: 'Saint Clair Area',       logo: 'logos/stclairsign.jpg',            alt: 'Saint Clair Area School District logo',     color: '#a5e8f0' },
+  { id: 'schuylkill-haven', name: 'Schuylkill Haven Area',  logo: 'logos/schhavensign.jpg',           alt: 'Schuylkill Haven Area School District logo', color: '#f0b8a5' },
+  { id: 'shenandoah',       name: 'Shenandoah Valley',      logo: 'logos/shenandoahsign.jpg',         alt: 'Shenandoah Valley School District logo',    color: '#d4a5f0' },
+  { id: 'tamaqua',          name: 'Tamaqua Area',           logo: 'logos/tamaquasign.jpg',            alt: 'Tamaqua Area School District logo',         color: '#a5f0d4' },
+  { id: 'tri-valley',       name: 'Tri-Valley',             logo: 'logos/tvbulldogslogo-final.png',   alt: 'Tri-Valley School District logo',           color: '#f0d4a5' },
+  { id: 'williams-valley',  name: 'Williams Valley',        logo: 'logos/williamsvalleysign.jpg',     alt: 'Williams Valley School District logo',      color: '#c8f0a5' },
 ];
 
-/* ============================================================
+/* ══════════════════════════════════════════════════════════
    GAME STATE
-   ============================================================ */
-const state = {
+══════════════════════════════════════════════════════════ */
+const S = {
   playerName:      '',
-  queue:           [],   // shuffled district objects still to be asked
-  currentDistrict: null,
+  queue:           [],    // remaining districts to ask
+  current:         null,  // current district object
   score:           0,
-  totalGuesses:    0,
-  correctGuesses:  0,
+  totalClicks:     0,
+  correctClicks:   0,
   completedIds:    new Set(),
-  firstTryIds:     new Set(),     // districts answered correctly on first try
-  districtAttempts:{},            // map of id -> wrong-guess count before correct
-  timerInterval:   null,
-  elapsedSeconds:  0,
-  gameActive:      false,
+  firstTryIds:     new Set(),
+  attempts:        {},
+  seconds:         0,
+  timerHandle:     null,
+  active:          false,
 };
 
-/* ============================================================
-   DOM REFERENCES
-   ============================================================ */
-const screens = {
-  start: document.getElementById('start-screen'),
-  game:  document.getElementById('game-screen'),
-  win:   document.getElementById('win-screen'),
-};
+/* ══════════════════════════════════════════════════════════
+   DOM REFS
+══════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const screens = { start: $('start-screen'), game: $('game-screen'), win: $('win-screen') };
 
-const ui = {
-  btnStart:             document.getElementById('btn-start'),
-  btnRestart:           document.getElementById('btn-restart'),
-  btnResetLbStart:      document.getElementById('btn-reset-lb-start'),
-  btnResetLbWin:        document.getElementById('btn-reset-lb-win'),
-  playerNameInput:      document.getElementById('player-name-input'),
-
-  statPlayer:           document.getElementById('stat-player'),
-  statScore:            document.getElementById('stat-score'),
-  statProgress:         document.getElementById('stat-progress'),
-  statTimer:            document.getElementById('stat-timer'),
-  feedbackMsg:          document.getElementById('feedback-msg'),
-  progressFill:         document.getElementById('progress-fill'),
-
-  promptLogo:           document.getElementById('prompt-logo'),
-  promptFallback:       document.getElementById('prompt-fallback'),
-  promptLabel:          document.getElementById('prompt-label'),
-
-  districtList:         document.getElementById('district-list'),
-
-  winScore:             document.getElementById('win-score'),
-  winTime:              document.getElementById('win-time'),
-  winAccuracy:          document.getElementById('win-accuracy'),
-  winCrowns:            document.getElementById('win-crowns'),
-
-  startLeaderboardBody: document.getElementById('start-leaderboard-body'),
-  winLeaderboardBody:   document.getElementById('win-leaderboard-body'),
-};
-
-/* ============================================================
-   INITIALIZATION
-   ============================================================ */
-
-/** Show one screen, hide the others */
+/* ══════════════════════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════════════════════ */
 function showScreen(name) {
-  Object.keys(screens).forEach(k => {
-    screens[k].classList.toggle('active', k === name);
-  });
+  Object.keys(screens).forEach(k => screens[k].classList.toggle('active', k === name));
 }
 
-/** Fisher-Yates shuffle — returns a new shuffled array */
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -1018,410 +643,334 @@ function shuffle(arr) {
   return a;
 }
 
-/** Apply each district's unique color to its SVG region */
-function colorMapRegions() {
-  DISTRICTS.forEach(d => {
-    const el = document.getElementById(d.id);
-    if (!el) return;
-    el.querySelectorAll('path, polygon, rect').forEach(shape => {
-      shape.style.fill = d.color;
-    });
-  });
+function fmt(secs) {
+  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
 }
 
-/** Build the sidebar district list */
-function buildDistrictList() {
-  ui.districtList.innerHTML = '';
+function accuracy() {
+  if (S.totalClicks === 0) return '—';
+  return Math.round((S.correctClicks / S.totalClicks) * 100) + '%';
+}
+
+/* ══════════════════════════════════════════════════════════
+   INITIALIZATION
+══════════════════════════════════════════════════════════ */
+function buildChecklist() {
+  const ul = $('district-list');
+  ul.innerHTML = '';
   DISTRICTS.forEach(d => {
     const li = document.createElement('li');
-    li.id = `list-${d.id}`;
-    li.innerHTML = `<span class="check"></span>${d.name}`;
-    ui.districtList.appendChild(li);
+    li.id = `li-${d.id}`;
+    li.innerHTML = `<span class="dot"></span>${d.name}`;
+    ul.appendChild(li);
   });
 }
 
-/** Wire up click handlers for every district region in the SVG */
-function attachMapListeners() {
+function attachMapClicks() {
+  document.querySelectorAll('.district').forEach(el => {
+    el.addEventListener('click', () => handleClick(el.id));
+  });
+}
+
+function applyDistrictColors() {
   DISTRICTS.forEach(d => {
     const el = document.getElementById(d.id);
-    if (!el) {
-      console.warn(`SVG region not found for district id: "${d.id}"`);
-      return;
-    }
-    el.addEventListener('click', () => handleMapClick(d.id));
+    if (el) el.style.fill = d.color;
   });
 }
 
-/** Reset all SVG regions to default state and reapply district colors */
-function resetMapRegions() {
-  DISTRICTS.forEach(d => {
-    const el = document.getElementById(d.id);
-    if (el) {
-      el.classList.remove('completed', 'wrong-flash');
-      // Remove any logo overlays added during game
-      el.querySelectorAll('.map-logo-overlay').forEach(n => n.remove());
-    }
-  });
-  colorMapRegions();
-}
-
-/** Overlay the district logo onto its SVG map region */
-function addLogoToMapRegion(district) {
+function addLogoOverlay(district) {
   const el = document.getElementById(district.id);
   if (!el) return;
-
-  // Use bounding box to center the image
   let bbox;
   try { bbox = el.getBBox(); } catch(e) { return; }
 
-  const PAD = 8;
-  const imgW = Math.min(bbox.width  - PAD * 2, 60);
-  const imgH = Math.min(bbox.height - PAD * 2, 40);
+  const PAD  = 3;
+  const imgW = Math.min(bbox.width  - PAD * 2, 48);
+  const imgH = Math.min(bbox.height - PAD * 2, 30);
   const imgX = bbox.x + (bbox.width  - imgW) / 2;
   const imgY = bbox.y + (bbox.height - imgH) / 2;
 
-  const imgEl = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-  imgEl.setAttribute('href', district.logo);
-  imgEl.setAttribute('x',      imgX);
-  imgEl.setAttribute('y',      imgY);
-  imgEl.setAttribute('width',  imgW);
-  imgEl.setAttribute('height', imgH);
-  imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-  imgEl.classList.add('map-logo-overlay');
+  const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+  img.setAttribute('href', district.logo);
+  img.setAttribute('x',      imgX);
+  img.setAttribute('y',      imgY);
+  img.setAttribute('width',  imgW);
+  img.setAttribute('height', imgH);
+  img.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  img.classList.add('map-logo-overlay');
 
-  el.appendChild(imgEl);
+  // Append to the SVG so it floats above all district paths
+  const svg = document.querySelector('#map-panel svg');
+  if (svg) svg.appendChild(img);
 }
 
-/* ============================================================
-   GAME FLOW
-   ============================================================ */
+function resetMap() {
+  document.querySelectorAll('.district').forEach(el => {
+    el.classList.remove('done', 'flash-wrong');
+    el.style.fill = '';
+  });
+  document.querySelectorAll('.map-logo-overlay').forEach(el => el.remove());
+  applyDistrictColors();
+}
 
+/* ══════════════════════════════════════════════════════════
+   GAME FLOW
+══════════════════════════════════════════════════════════ */
 function startGame() {
-  const rawName = ui.playerNameInput.value.trim();
-  if (!rawName) {
-    ui.playerNameInput.focus();
-    ui.playerNameInput.style.borderColor = 'var(--danger)';
-    setTimeout(() => { ui.playerNameInput.style.borderColor = ''; }, 1200);
+  const name = $('player-name').value.trim();
+  if (!name) {
+    $('player-name').focus();
+    $('player-name').style.borderColor = 'var(--danger)';
+    setTimeout(() => $('player-name').style.borderColor = '', 900);
     return;
   }
 
-  state.playerName      = rawName;
-  state.queue           = shuffle(DISTRICTS);
-  state.currentDistrict = null;
-  state.score           = 0;
-  state.totalGuesses    = 0;
-  state.correctGuesses  = 0;
-  state.completedIds    = new Set();
-  state.firstTryIds     = new Set();
-  state.districtAttempts= {};
-  state.elapsedSeconds  = 0;
-  state.gameActive      = true;
+  S.playerName    = name;
+  S.queue         = shuffle(DISTRICTS);
+  S.current       = null;
+  S.score         = 0;
+  S.totalClicks   = 0;
+  S.correctClicks = 0;
+  S.seconds       = 0;
+  S.completedIds  = new Set();
+  S.firstTryIds   = new Set();
+  S.attempts      = {};
+  S.active        = true;
 
-  // Reset UI
-  resetMapRegions();
-  buildDistrictList();
+  resetMap();
+  buildChecklist();
   updateHUD();
   hideFeedback();
+  $('stat-player').textContent = `👤 ${S.playerName}`;
 
-  ui.statPlayer.textContent = `👤 ${state.playerName}`;
-
-  // Start timer
-  clearInterval(state.timerInterval);
-  state.timerInterval = setInterval(() => {
-    state.elapsedSeconds++;
-    updateTimerDisplay();
-  }, 1000);
+  clearInterval(S.timerHandle);
+  S.timerHandle = setInterval(() => { S.seconds++; updateTimers(); }, 1000);
 
   showScreen('game');
   nextPrompt();
 }
 
 function nextPrompt() {
-  if (state.queue.length === 0) {
-    endGame();
-    return;
-  }
-
-  state.currentDistrict = state.queue.pop();
-  showPrompt(state.currentDistrict);
+  if (S.queue.length === 0) { endGame(); return; }
+  S.current = S.queue.pop();
+  loadLogo(S.current);
 }
 
-/** Load the logo for the current district into the prompt area */
-function showPrompt(district) {
-  ui.promptLogo.style.display = 'block';
-  ui.promptFallback.style.display = 'none';
-  ui.promptLogo.alt = district.alt;
-  ui.promptLogo.src = district.logo;
-
-  // If image fails to load, show fallback text
-  ui.promptLogo.onerror = () => {
-    ui.promptLogo.style.display = 'none';
-    ui.promptFallback.style.display = 'block';
-    ui.promptFallback.textContent = district.name;
+function loadLogo(district) {
+  const img = $('logo-img');
+  const fb  = $('logo-fallback');
+  img.style.display = 'block';
+  fb.style.display  = 'none';
+  img.alt = district.alt;
+  img.src = district.logo;
+  img.onerror = () => {
+    img.style.display = 'none';
+    fb.style.display  = 'block';
+    fb.textContent    = district.name;
   };
 }
 
-/* ============================================================
-   EVENT HANDLING
-   ============================================================ */
+/* ══════════════════════════════════════════════════════════
+   MAP CLICK HANDLING
+══════════════════════════════════════════════════════════ */
+function handleClick(clickedId) {
+  if (!S.active || !S.current) return;
+  if (S.completedIds.has(clickedId)) return;  // already solved
 
-function handleMapClick(clickedId) {
-  if (!state.gameActive || !state.currentDistrict) return;
+  S.totalClicks++;
 
-  // Ignore clicks on already-completed regions
-  if (state.completedIds.has(clickedId)) return;
-
-  state.totalGuesses++;
-
-  if (clickedId === state.currentDistrict.id) {
-    handleCorrect(clickedId);
+  if (clickedId === S.current.id) {
+    onCorrect(clickedId);
   } else {
-    handleWrong(clickedId);
+    onWrong(clickedId);
   }
 }
 
-function handleCorrect(id) {
-  state.correctGuesses++;
+function onCorrect(id) {
+  S.correctClicks++;
+  S.score += 10;
+  S.completedIds.add(id);
 
-  // Check for first-try (no wrong guesses recorded for this district yet)
-  const wrongCount = state.districtAttempts[id] || 0;
-  const isFirstTry = wrongCount === 0;
-  if (isFirstTry) {
-    state.firstTryIds.add(id);
-  }
-
-  const pts = 10;
-  state.score += pts;
-
-  state.completedIds.add(id);
-
-  // Lock SVG region green + add logo overlay
-  const el = document.getElementById(id);
-  if (el) el.classList.add('completed');
-
-  // Find the district object for the logo
   const district = DISTRICTS.find(d => d.id === id);
-  if (district) addLogoToMapRegion(district);
+  const isFirstTry = (S.attempts[id] || 0) === 0;
+  if (isFirstTry) S.firstTryIds.add(id);
 
-  // Mark sidebar with check (and crown if first try)
-  const li = document.getElementById(`list-${id}`);
+  // Lock map region
+  document.getElementById(id).classList.add('done');
+  if (district) addLogoOverlay(district);
+
+  // Check sidebar item
+  const li = $(`li-${id}`);
   if (li) {
     li.classList.add('done');
-    if (isFirstTry) {
+    if (isFirstTry && !li.querySelector('.crown')) {
       const crown = document.createElement('span');
       crown.className = 'crown';
       crown.textContent = '👑';
-      crown.title = 'Correct on first try!';
+      crown.title = 'Correct on first try';
       li.appendChild(crown);
     }
   }
 
-  const crownLabel = isFirstTry ? ' 👑' : '';
-  showFeedback('correct', `Correct! +${pts}${crownLabel}`);
+  showFeedback('correct', isFirstTry ? '✓ Correct! +10 👑' : '✓ Correct! +10');
   updateHUD();
 
-  // Brief pause before next prompt
-  state.gameActive = false;
+  S.active = false;
   setTimeout(() => {
-    state.gameActive = true;
     hideFeedback();
+    S.active = true;
     nextPrompt();
-  }, 900);
+  }, 700);
 }
 
-function handleWrong(clickedId) {
-  // Track wrong attempt for this district
-  const cid = state.currentDistrict.id;
-  state.districtAttempts[cid] = (state.districtAttempts[cid] || 0) + 1;
-
-  showFeedback('wrong', `Not quite — try again!`);
-
-  // Flash wrong region red briefly
-  const el = document.getElementById(clickedId);
-  if (el) {
-    el.classList.add('wrong-flash');
-    setTimeout(() => el.classList.remove('wrong-flash'), 600);
-  }
+function onWrong(id) {
+  if (S.current) S.attempts[S.current.id] = (S.attempts[S.current.id] || 0) + 1;
+  showFeedback('wrong', '✗ Not quite — try again!');
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('flash-wrong');
+  setTimeout(() => el.classList.remove('flash-wrong'), 550);
 }
 
-/* ============================================================
-   SCORING / PROGRESS
-   ============================================================ */
-
+/* ══════════════════════════════════════════════════════════
+   HUD / DISPLAY
+══════════════════════════════════════════════════════════ */
 function updateHUD() {
-  const total     = DISTRICTS.length;
-  const completed = state.completedIds.size;
-  const pct       = total > 0 ? (completed / total) * 100 : 0;
-
-  ui.statScore.textContent    = `Score: ${state.score}`;
-  ui.statProgress.textContent = `${completed} / ${total}`;
-  ui.progressFill.style.width = `${pct}%`;
+  const n = DISTRICTS.length;
+  const c = S.completedIds.size;
+  $('stat-score').textContent    = `Score: ${S.score}`;
+  $('stat-progress').textContent = `${c} / ${n}`;
+  $('progress-fill').style.width = `${(c / n) * 100}%`;
+  $('sb-score').textContent      = S.score;
+  $('sb-found').textContent      = `${c} / ${n}`;
+  $('sb-accuracy').textContent   = accuracy();
 }
 
-function updateTimerDisplay() {
-  ui.statTimer.textContent = formatTime(state.elapsedSeconds);
-}
-
-function formatTime(secs) {
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return `${m}:${String(s).padStart(2, '00')}`;
+function updateTimers() {
+  const t = fmt(S.seconds);
+  $('stat-timer').textContent = t;
+  $('sb-timer').textContent   = t;
 }
 
 function showFeedback(type, msg) {
-  ui.feedbackMsg.textContent = msg;
-  ui.feedbackMsg.className   = `show ${type}`;
+  const el = $('feedback');
+  el.textContent = msg;
+  el.className   = type === 'correct' ? 'show-correct' : 'show-wrong';
 }
 
 function hideFeedback() {
-  ui.feedbackMsg.className = '';
-  ui.feedbackMsg.textContent = '';
+  const el = $('feedback');
+  el.textContent = '';
+  el.className   = '';
 }
 
-/* ============================================================
+/* ══════════════════════════════════════════════════════════
    WIN SCREEN
-   ============================================================ */
-
+══════════════════════════════════════════════════════════ */
 function endGame() {
-  clearInterval(state.timerInterval);
-  state.gameActive = false;
+  clearInterval(S.timerHandle);
+  S.active = false;
 
-  const accuracy = state.totalGuesses > 0
-    ? Math.round((state.correctGuesses / state.totalGuesses) * 100)
+  const acc = S.totalClicks > 0
+    ? Math.round((S.correctClicks / S.totalClicks) * 100)
     : 100;
 
-  const crowns = state.firstTryIds.size;
+  const crowns = S.firstTryIds.size;
 
-  ui.winScore.textContent    = state.score;
-  ui.winTime.textContent     = formatTime(state.elapsedSeconds);
-  ui.winAccuracy.textContent = `${accuracy}%`;
-  ui.winCrowns.textContent   = crowns;
+  $('w-score').textContent    = S.score;
+  $('w-time').textContent     = fmt(S.seconds);
+  $('w-accuracy').textContent = acc + '%';
+  $('w-crowns').textContent   = crowns;
 
-  saveLeaderboard({
-    name:     state.playerName,
-    score:    state.score,
-    time:     state.elapsedSeconds,
-    accuracy,
+  const thisRun = {
+    name:     S.playerName,
+    score:    S.score,
+    time:     S.seconds,
+    accuracy: acc,
     crowns,
-  });
-
-  renderLeaderboard(ui.winLeaderboardBody);
-
+    stamp:    Date.now(),
+  };
+  saveRun(thisRun);
+  renderLeaderboard(thisRun);
   showScreen('win');
 }
 
-/* ============================================================
-   LOCALSTORAGE LEADERBOARD
-   ============================================================ */
+/* ══════════════════════════════════════════════════════════
+   LOCAL STORAGE LEADERBOARD
+══════════════════════════════════════════════════════════ */
+const LS_KEY = 'schuylkill-quiz-v3';
 
-const LS_KEY     = 'schuylkill-quiz-leaderboard-v2';
-const MAX_ENTRIES = 10;
-
-function saveLeaderboard(entry) {
-  const board = loadLeaderboard();
-  board.push(entry);
-  // Sort: highest score first, then fastest time
-  board.sort((a, b) => b.score - a.score || a.time - b.time);
-  const trimmed = board.slice(0, MAX_ENTRIES);
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(trimmed));
-  } catch (e) {
-    // localStorage unavailable — silently skip
-  }
+function saveRun(run) {
+  const runs = loadRuns();
+  runs.push(run);
+  runs.sort((a, b) =>
+    (b.score - a.score) ||
+    (a.time - b.time) ||
+    (b.accuracy - a.accuracy) ||
+    (b.crowns - a.crowns)
+  );
+  try { localStorage.setItem(LS_KEY, JSON.stringify(runs.slice(0, 10))); } catch {}
 }
 
-function loadLeaderboard() {
-  try {
-    return JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-  } catch {
-    return [];
-  }
+function loadRuns() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
 }
 
-function clearLeaderboard() {
-  try { localStorage.removeItem(LS_KEY); } catch(e) {}
+function clearRuns() {
+  try { localStorage.removeItem(LS_KEY); } catch {}
 }
 
-function renderLeaderboard(tbodyEl) {
-  const board = loadLeaderboard();
-  tbodyEl.innerHTML = '';
+function renderLeaderboard(currentRun, bodyId = 'lb-body') {
+  const MEDALS = ['🥇', '🥈', '🥉'];
+  const runs   = loadRuns();
+  const tb     = $(bodyId);
+  tb.innerHTML = '';
 
-  if (board.length === 0) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="6" style="color:var(--muted);text-align:center;padding:.5rem">No records yet</td>`;
-    tbodyEl.appendChild(tr);
+  if (!runs.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:.75rem">No records yet — play to set one!</td></tr>';
     return;
   }
 
-  board.forEach((entry, i) => {
-    const tr = document.createElement('tr');
-    const crownsDisplay = entry.crowns > 0 ? `${entry.crowns} 👑` : '—';
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${entry.name || '—'}</td>
-      <td>${entry.score}</td>
-      <td>${formatTime(entry.time)}</td>
-      <td>${entry.accuracy}%</td>
-      <td class="crown-cell">${crownsDisplay}</td>
+  runs.forEach((r, i) => {
+    const medal   = MEDALS[i] || `${i + 1}`;
+    const isThis  = currentRun && r.stamp === currentRun.stamp;
+    const tr      = document.createElement('tr');
+    if (isThis) tr.classList.add('this-run');
+    tr.innerHTML  = `
+      <td class="rank-cell">${medal}</td>
+      <td>${r.name || '—'}</td>
+      <td><strong>${r.score}</strong></td>
+      <td>${fmt(r.time)}</td>
+      <td>${r.accuracy}%</td>
+      <td class="crown-cell">${r.crowns ? `${r.crowns} 👑` : '—'}</td>
     `;
-    tbodyEl.appendChild(tr);
+    tb.appendChild(tr);
   });
 }
 
-function renderAllLeaderboards() {
-  renderLeaderboard(ui.startLeaderboardBody);
-  renderLeaderboard(ui.winLeaderboardBody);
+function renderAllLeaderboards(currentRun = null) {
+  renderLeaderboard(currentRun, 'start-lb-body');
+  renderLeaderboard(currentRun, 'lb-body');
 }
 
-/* ============================================================
-   BUTTON WIRING
-   ============================================================ */
+/* ══════════════════════════════════════════════════════════
+   EVENT WIRING
+══════════════════════════════════════════════════════════ */
+$('btn-start').addEventListener('click', startGame);
+$('btn-restart').addEventListener('click', () => { showScreen('start'); renderAllLeaderboards(); });
+$('btn-clear-lb').addEventListener('click', () => { if (confirm('Reset the leaderboard?')) { clearRuns(); renderAllLeaderboards(); } });
+$('btn-reset-start').addEventListener('click', () => { if (confirm('Reset the leaderboard?')) { clearRuns(); renderAllLeaderboards(); } });
+$('player-name').addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); });
 
-ui.btnStart.addEventListener('click', startGame);
-
-ui.btnRestart.addEventListener('click', () => {
-  showScreen('start');
-  renderLeaderboard(ui.startLeaderboardBody);
-});
-
-ui.btnResetLbStart.addEventListener('click', () => {
-  if (confirm('Reset the entire leaderboard? This cannot be undone.')) {
-    clearLeaderboard();
-    renderAllLeaderboards();
-  }
-});
-
-ui.btnResetLbWin.addEventListener('click', () => {
-  if (confirm('Reset the entire leaderboard? This cannot be undone.')) {
-    clearLeaderboard();
-    renderAllLeaderboards();
-  }
-});
-
-// Allow pressing Enter in the name field to start
-ui.playerNameInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') startGame();
-});
-
-/* ============================================================
-   STARTUP
-   ============================================================ */
-
-// Apply district colors to map
-colorMapRegions();
-
-// Build sidebar list on page load so it's visible before start
-buildDistrictList();
-
-// Wire map clicks (SVG must already be in the DOM above)
-attachMapListeners();
-
-// Render leaderboard on start screen
-renderLeaderboard(ui.startLeaderboardBody);
-
-// Show start screen
+/* ══════════════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════════════ */
+buildChecklist();
+applyDistrictColors();
+attachMapClicks();
+renderAllLeaderboards();
 showScreen('start');
-
 </script>
 </body>
 </html>
