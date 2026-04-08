@@ -748,6 +748,23 @@ function startGame() {
   S.firstTryIds   = new Set();
   S.attempts      = {};
   S.active        = true;
+
+  resetMap();
+  buildChecklist();
+  updateHUD();
+  hideFeedback();
+  $('stat-player').textContent = `👤 ${S.playerName}`;
+
+  clearInterval(S.timerHandle);
+  S.timerHandle = setInterval(() => {
+    S.seconds++;
+    updateTimers();
+  }, 1000);
+
+  showScreen('game');
+  nextPrompt();
+}
+
 function applyDistrictColors() {
   const colors = [
     "#f87171",
@@ -767,18 +784,6 @@ function applyDistrictColors() {
   document.querySelectorAll('.district').forEach((el, i) => {
     el.style.fill = colors[i % colors.length];
   });
-}
-  resetMap();
-  buildChecklist();
-  updateHUD();
-  hideFeedback();
-  $('stat-player').textContent = `👤 ${S.playerName}`;
-
-  clearInterval(S.timerHandle);
-  S.timerHandle = setInterval(() => { S.seconds++; updateTimers(); }, 1000);
-
-  showScreen('game');
-  nextPrompt();
 }
 
 function nextPrompt() {
