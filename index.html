@@ -701,7 +701,30 @@ function resetMap() {
   document.querySelectorAll('.map-logo-overlay').forEach(el => el.remove());
   applyDistrictColors();
 }
+function addLogoOverlay(district) {
+  const el = document.getElementById(district.id);
+  if (!el) return;
 
+  let bbox;
+  try { bbox = el.getBBox(); } catch(e) { return; }
+
+  const PAD = 8;
+  const imgW = Math.min(bbox.width - PAD * 2, 60);
+  const imgH = Math.min(bbox.height - PAD * 2, 40);
+  const imgX = bbox.x + (bbox.width - imgW) / 2;
+  const imgY = bbox.y + (bbox.height - imgH) / 2;
+
+  const imgEl = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+  imgEl.setAttribute('href', district.logo);
+  imgEl.setAttribute('x', imgX);
+  imgEl.setAttribute('y', imgY);
+  imgEl.setAttribute('width', imgW);
+  imgEl.setAttribute('height', imgH);
+  imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  imgEl.classList.add('map-logo-overlay');
+
+  el.appendChild(imgEl);
+}
 /* ══════════════════════════════════════════════════════════
    GAME FLOW
 ══════════════════════════════════════════════════════════ */
