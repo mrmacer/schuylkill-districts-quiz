@@ -765,27 +765,6 @@ function startGame() {
   nextPrompt();
 }
 
-function applyDistrictColors() {
-  const colors = [
-    "#f87171",
-    "#fb923c",
-    "#facc15",
-    "#4ade80",
-    "#2dd4bf",
-    "#60a5fa",
-    "#a78bfa",
-    "#f472b6",
-    "#34d399",
-    "#fbbf24",
-    "#38bdf8",
-    "#c084fc"
-  ];
-
-  document.querySelectorAll('.district').forEach((el, i) => {
-    el.style.fill = colors[i % colors.length];
-  });
-}
-
 function nextPrompt() {
   if (S.queue.length === 0) { endGame(); return; }
   S.current = S.queue.pop();
@@ -910,14 +889,25 @@ function endGame() {
   const acc = S.totalClicks > 0
     ? Math.round((S.correctClicks / S.totalClicks) * 100)
     : 100;
+  const crowns = S.firstTryIds.size;
 
   $('w-score').textContent    = S.score;
   $('w-time').textContent     = fmt(S.seconds);
   $('w-accuracy').textContent = acc + '%';
+  $('w-crowns').textContent   = crowns;
 
-  const thisRun = { score: S.score, time: S.seconds, accuracy: acc, date: new Date().toLocaleDateString() };
+  const thisRun = {
+    stamp: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+    name: S.playerName,
+    score: S.score,
+    time: S.seconds,
+    accuracy: acc,
+    crowns,
+    date: new Date().toLocaleDateString()
+  };
+
   saveRun(thisRun);
-  renderLeaderboard(thisRun);
+  renderAllLeaderboards(thisRun);
   showScreen('win');
 }
 
@@ -931,13 +921,12 @@ function saveRun(run) {
   runs.push(run);
   runs.sort((a, b) =>
     (b.score - a.score) ||
+    ((b.crowns || 0) - (a.crowns || 0)) ||
     (a.time - b.time) ||
-    (b.accuracy - a.accuracy) ||
-    (b.crowns - a.crowns)
+    (b.accuracy - a.accuracy)
   );
   try { localStorage.setItem(LS_KEY, JSON.stringify(runs.slice(0, 10))); } catch {}
 }
-
 function loadRuns() {
   try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
 }
