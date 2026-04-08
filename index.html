@@ -672,7 +672,28 @@ function attachMapClicks() {
     el.addEventListener('click', () => handleClick(el.id));
   });
 }
+function applyDistrictColors() {
+  const colors = [
+    "#f87171",
+    "#fb923c",
+    "#facc15",
+    "#4ade80",
+    "#2dd4bf",
+    "#60a5fa",
+    "#a78bfa",
+    "#f472b6",
+    "#34d399",
+    "#fbbf24",
+    "#38bdf8",
+    "#c084fc"
+  ];
 
+  document.querySelectorAll('.district').forEach((el, i) => {
+    if (!el.classList.contains('done') && !el.classList.contains('flash-wrong')) {
+      el.style.fill = colors[i % colors.length];
+    }
+  });
+}
 function resetMap() {
   document.querySelectorAll('.district').forEach(el => {
     el.classList.remove('done', 'flash-wrong');
