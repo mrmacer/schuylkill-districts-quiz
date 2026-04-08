@@ -3,696 +3,636 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PA Intermediate Units Quiz</title>
+<title>Schuylkill County School Districts</title>
 <style>
-  /* ---- Reset & Base ---- */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Reset ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg:         #f0f2f5;
-    --surface:    #ffffff;
-    --border:     #d0d5dd;
-    --primary:    #1D9E75;
-    --primary-dk: #157a5c;
-    --success:    #1D9E75;
-    --danger:     #dc2626;
-    --text:       #1e293b;
-    --muted:      #64748b;
-    --radius:     10px;
-    --shadow:     0 2px 8px rgba(0,0,0,.10);
-    --transition: .18s ease;
-  }
+:root {
+  --bg:       #f0f2f5;
+  --surface:  #ffffff;
+  --border:   #d0d5dd;
+  --primary:  #1d4ed8;
+  --primary-h:#2563eb;
+  --success:  #16a34a;
+  --danger:   #dc2626;
+  --text:     #1e293b;
+  --muted:    #64748b;
+  --radius:   10px;
+  --shadow:   0 2px 10px rgba(0,0,0,.10);
+}
 
-  body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
+/* Each screen is a full-viewport "page" layered on top of each other.
+   Only the active one is visible. No scrolling between pages. */
+html, body { height: 100%; overflow: hidden; }
 
-  /* ---- Screens ---- */
-  .screen { display: none; width: 100%; }
-  .screen.active { display: flex; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
 
-  /* ============================================================
-     START SCREEN
-     ============================================================ */
-  #start-screen {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
-    text-align: center;
-    gap: 1rem;
-  }
+/* ── Screens ─────────────────────────────────────────────── */
+.screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  overflow-y: auto;   /* start/win can scroll on tiny screens */
+}
+.screen.active { display: flex; flex-direction: column; }
 
-  #start-screen .logo-mark { font-size: 3.5rem; }
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  padding: .65rem 1.5rem; border: none; border-radius: var(--radius);
+  font-size: 1rem; font-weight: 600; cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-h); }
+.btn-ghost { background: var(--surface); color: var(--text); border: 1.5px solid var(--border); }
+.btn-ghost:hover { background: var(--bg); }
+.btn-lg { padding: .85rem 2.2rem; font-size: 1.1rem; }
 
-  #start-screen h1 {
-    font-size: clamp(1.6rem, 4vw, 2.4rem);
-    font-weight: 700;
-  }
+/* ══════════════════════════════════════════════════════════
+   START SCREEN
+══════════════════════════════════════════════════════════ */
+#start-screen {
+  align-items: center; justify-content: center;
+  padding: 2rem; text-align: center; gap: 1rem;
+}
+#start-screen .icon { font-size: 3.5rem; }
+#start-screen h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; line-height: 1.2; }
+#start-screen p { color: var(--muted); max-width: 420px; line-height: 1.6; font-size: 1rem; }
+#start-screen .card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.5rem;
+  box-shadow: var(--shadow); text-align: left; max-width: 380px; width: 100%;
+}
+#start-screen .card h3 { font-size: .8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+#start-screen .card ul { list-style: none; display: flex; flex-direction: column; gap: .35rem; }
+#start-screen .card li { font-size: .9rem; display: flex; align-items: baseline; gap: .5rem; }
+#start-screen .card li::before { content: "→"; color: var(--primary); font-weight: 700; flex-shrink: 0; }
 
-  #start-screen .tagline {
-    font-size: 1.05rem;
-    color: var(--muted);
-    max-width: 440px;
-    line-height: 1.6;
-  }
+/* ══════════════════════════════════════════════════════════
+   GAME SCREEN — strict no-scroll, everything must fit in 100vh
+══════════════════════════════════════════════════════════ */
+#game-screen {
+  overflow: hidden;   /* hard stop: nothing overflows the viewport */
+  padding: .6rem;
+  gap: .6rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
 
-  /* Name input */
-  .name-field {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .4rem;
-  }
-  .name-field label {
-    font-size: .88rem;
-    font-weight: 600;
-    color: var(--muted);
-  }
-  .name-field input {
-    padding: .55rem 1rem;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    font-size: 1rem;
-    width: 220px;
-    text-align: center;
-    background: var(--surface);
-    color: var(--text);
-    transition: border-color var(--transition);
-  }
-  .name-field input:focus {
-    outline: none;
-    border-color: var(--primary);
-  }
+/* ── Header bar ──────────────────────────────────────────── */
+#header {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .55rem 1rem;
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  box-shadow: var(--shadow);
+}
+#header-title { font-weight: 700; font-size: .9rem; color: var(--muted); white-space: nowrap; }
+#progress-track {
+  flex: 1; min-width: 80px;
+  background: var(--border); border-radius: 4px; height: 7px; overflow: hidden;
+}
+#progress-fill {
+  height: 100%; width: 0%; background: var(--primary);
+  border-radius: 4px; transition: width .4s ease;
+}
+.stat {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: .2rem .7rem;
+  font-size: .85rem; font-weight: 700; white-space: nowrap;
+}
+#feedback {
+  font-size: .88rem; font-weight: 700; padding: .2rem .75rem;
+  border-radius: 20px; opacity: 0; transition: opacity .2s;
+  white-space: nowrap;
+}
+#feedback.show-correct { opacity: 1; background: #dcfce7; color: var(--success); }
+#feedback.show-wrong   { opacity: 1; background: #fee2e2; color: var(--danger); }
 
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    padding: .7rem 1.6rem;
-    border: none;
-    border-radius: var(--radius);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background var(--transition), transform var(--transition);
-  }
-  .btn:active { transform: scale(.97); }
+/* ── Main layout ─────────────────────────────────────────── */
+#main-area {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: .6rem;
+  flex: 1;
+  min-height: 0;   /* allow flex child to shrink below content size */
+  overflow: hidden;
+}
 
-  .btn-primary { background: var(--primary); color: #fff; }
-  .btn-primary:hover { background: var(--primary-dk); }
+/* Left column (prompt + map) */
+#left-col {
+  display: flex; flex-direction: column; gap: .6rem;
+  min-height: 0; overflow: hidden;
+}
 
-  .btn-ghost {
-    background: var(--surface);
-    color: var(--text);
-    border: 1.5px solid var(--border);
-  }
-  .btn-ghost:hover { background: var(--bg); }
+/* ── Map panel — fills all remaining height in left column ── */
+#map-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: .4rem;
+  flex: 1;        /* grow to fill remaining space */
+  min-height: 0;  /* allow shrink */
+}
+#map-panel svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  /* preserve aspect ratio and fit within container */
+  object-fit: contain;
+}
 
-  .btn-danger {
-    background: #fff;
-    color: var(--danger);
-    border: 1.5px solid var(--danger);
-    font-size: .82rem;
-    padding: .3rem .85rem;
-  }
-  .btn-danger:hover { background: #fee2e2; }
+/* ── SVG district styling ────────────────────────────────── */
 
-  .btn-lg { padding: .9rem 2.4rem; font-size: 1.15rem; }
+/* Non-interactive elements */
+#county-outline { fill: #e2e8f0; stroke: #94a3b8; stroke-width: 1.5; }
+#path13-border  { fill: #cbd5e1; stroke: #94a3b8; stroke-width: .5; pointer-events: none; }
 
-  /* ============================================================
-     LEADERBOARD (shared — start & win screens)
-     ============================================================ */
-  .leaderboard-wrap {
-    width: 100%;
-    max-width: 540px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: .9rem 1rem;
-    box-shadow: var(--shadow);
-  }
+/* All clickable districts */
+.district {
+  fill: #bfdbfe;
+  stroke: #1e40af;
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill .15s;
+}
+.district:hover:not(.done):not(.flash-wrong) { fill: #93c5fd; }
 
-  .leaderboard-wrap .lb-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: .6rem;
-  }
+/* Correct / locked */
+.district.done {
+  fill: #bbf7d0 !important;
+  stroke: #166534 !important;
+  cursor: default;
+}
 
-  .leaderboard-wrap h3 {
-    font-size: .9rem;
-    font-weight: 700;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .06em;
-  }
+/* Wrong flash */
+.district.flash-wrong { fill: #fca5a5 !important; stroke: #991b1b !important; }
 
-  .leaderboard-wrap table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: .85rem;
-  }
+/* Correct flash animation */
+@keyframes pop-correct {
+  0%   { filter: drop-shadow(0 0 0px #16a34a); }
+  40%  { filter: drop-shadow(0 0 10px #16a34a); }
+  100% { filter: drop-shadow(0 0 0px #16a34a); }
+}
+.district.done { animation: pop-correct .5s ease; }
 
-  .leaderboard-wrap th {
-    text-align: left;
-    padding: .3rem .45rem;
-    border-bottom: 1.5px solid var(--border);
-    color: var(--muted);
-    font-weight: 600;
-  }
+/* ── Prompt card — fixed compact height, never grows ──────── */
+#prompt-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .55rem 1rem;
+  display: flex; flex-direction: row; align-items: center; gap: .9rem;
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+}
+#prompt-label {
+  font-size: .78rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em; white-space: nowrap;
+}
+#logo-wrap {
+  height: 80px; width: 130px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px dashed var(--border); border-radius: 8px;
+  background: var(--bg); overflow: hidden; flex-shrink: 0;
+}
+#logo-img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain; display: block;
+}
+#logo-fallback {
+  font-size: .88rem; font-weight: 700; color: var(--muted);
+  text-align: center; padding: .4rem; display: none;
+}
 
-  .leaderboard-wrap td {
-    padding: .3rem .45rem;
-    border-bottom: 1px solid var(--bg);
-  }
+/* ── Side panel ──────────────────────────────────────────── */
+#side-panel {
+  display: flex; flex-direction: column; gap: .6rem;
+  min-height: 0; overflow: hidden;
+}
 
-  .leaderboard-wrap tbody tr:first-child td {
-    font-weight: 700;
-    color: var(--primary);
-  }
+.panel-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+  box-shadow: var(--shadow);
+}
+.panel-card h3 {
+  font-size: .75rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em; margin-bottom: .5rem;
+}
 
-  .crown-cell { color: #f59e0b; }
+/* District list fills all remaining side-panel height */
+#checklist-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+}
+#district-list {
+  list-style: none;
+  display: flex; flex-direction: column; gap: .22rem;
+  overflow-y: auto; padding-right: 2px;
+  flex: 1; min-height: 0;
+}
+#district-list::-webkit-scrollbar { width: 4px; }
+#district-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+#district-list li {
+  font-size: .8rem; padding: .25rem .45rem;
+  border-radius: 5px; display: flex; align-items: center; gap: .4rem;
+  color: var(--muted); transition: background .15s;
+}
+#district-list li.done {
+  color: var(--success); background: #f0fdf4;
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border); flex-shrink: 0; transition: background .2s;
+}
+#district-list li.done .dot { background: var(--success); }
 
-  /* ============================================================
-     GAME SCREEN
-     ============================================================ */
-  #game-screen {
-    flex-direction: column;
-    min-height: 100vh;
-    padding: .75rem 1rem 1rem;
-    gap: .75rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-  }
+/* ══════════════════════════════════════════════════════════
+   WIN SCREEN
+══════════════════════════════════════════════════════════ */
+#win-screen {
+  align-items: center; justify-content: center;
+  padding: 2rem; text-align: center; gap: 1.1rem;
+}
+#win-screen h2 { font-size: 2.2rem; font-weight: 800; }
 
-  /* ---- Top bar ---- */
-  #top-bar {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: .6rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-    box-shadow: var(--shadow);
-  }
+.win-stats { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+.win-stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .9rem 1.6rem;
+  min-width: 110px; box-shadow: var(--shadow);
+}
+.win-stat .val { font-size: 1.9rem; font-weight: 800; color: var(--primary); }
+.win-stat .lbl { font-size: .78rem; color: var(--muted); margin-top: .1rem; }
 
-  #top-bar .bar-title {
-    font-weight: 700;
-    font-size: .95rem;
-    color: var(--muted);
-    white-space: nowrap;
-  }
+/* Leaderboard */
+#leaderboard-wrap {
+  width: 100%; max-width: 500px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  overflow: hidden;
+}
+#leaderboard-wrap .lb-head {
+  padding: .75rem 1.1rem .5rem;
+  font-size: .8rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+#lb-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+#lb-table th {
+  text-align: left; padding: .45rem 1.1rem;
+  border-bottom: 1px solid var(--border); color: var(--muted);
+  font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+}
+#lb-table td { padding: .55rem 1.1rem; border-bottom: 1px solid var(--bg); }
+/* Gold / silver / bronze rows */
+#lb-table tbody tr:nth-child(1) td { font-weight: 700; color: #b45309; background: #fffbeb; }
+#lb-table tbody tr:nth-child(2) td { font-weight: 600; color: #475569; background: #f8fafc; }
+#lb-table tbody tr:nth-child(3) td { font-weight: 600; color: #7c5228; background: #fdf8f3; }
+#lb-table .rank-cell { font-size: 1rem; }
+/* "This run" highlight */
+#lb-table tbody tr.this-run td { background: #eff6ff !important; color: var(--primary) !important; font-weight: 700; }
 
-  #top-bar .spacer { flex: 1; }
 
-  .stat-pill {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: .25rem .75rem;
-    font-size: .88rem;
-    font-weight: 600;
-    white-space: nowrap;
-  }
+/* Added upgrades */
+.name-field {
+  display:flex; flex-direction:column; align-items:center; gap:.35rem;
+  width:100%; max-width:260px;
+}
+.name-field label {
+  font-size:.88rem; font-weight:600; color:var(--muted);
+}
+.name-field input {
+  width:100%; padding:.6rem .9rem; border:1.5px solid var(--border);
+  border-radius:var(--radius); background:var(--surface); color:var(--text);
+  text-align:center; font-size:1rem;
+}
+.name-field input:focus { outline:none; border-color:var(--primary); }
 
-  #feedback-msg {
-    font-size: .9rem;
-    font-weight: 600;
-    padding: .25rem .75rem;
-    border-radius: 20px;
-    opacity: 0;
-    transition: opacity .2s;
-  }
-  #feedback-msg.show { opacity: 1; }
-  #feedback-msg.correct { background: #dcfce7; color: var(--success); }
-  #feedback-msg.wrong   { background: #fee2e2; color: var(--danger); }
+.btn-danger {
+  background:#fff; color:var(--danger); border:1.5px solid var(--danger);
+}
+.btn-danger:hover { background:#fee2e2; }
 
-  /* ---- Progress bar ---- */
-  #progress-wrap {
-    background: var(--border);
-    border-radius: 4px;
-    height: 6px;
-    width: 100%;
-    overflow: hidden;
-  }
-  #progress-fill {
-    height: 100%;
-    background: var(--primary);
-    border-radius: 4px;
-    transition: width .4s ease;
-    width: 0%;
-  }
+.leaderboard-wrap {
+  width:100%; max-width:560px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.leaderboard-wrap .lb-header {
+  padding:.75rem 1rem .55rem;
+  display:flex; align-items:center; justify-content:space-between; gap:.8rem;
+  border-bottom:1px solid var(--border);
+}
+.leaderboard-wrap .lb-header h3 {
+  font-size:.82rem; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.07em;
+}
+.leaderboard-wrap table { width:100%; border-collapse:collapse; font-size:.88rem; }
+.leaderboard-wrap th {
+  text-align:left; padding:.45rem .8rem; border-bottom:1px solid var(--border);
+  color:var(--muted); font-size:.76rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+}
+.leaderboard-wrap td { padding:.5rem .8rem; border-bottom:1px solid var(--bg); }
+.leaderboard-wrap tbody tr:first-child td { font-weight:700; color:var(--primary); }
+.crown-cell, .crown { color:#d97706; }
+#district-list li .crown { margin-left:auto; font-size:.95rem; }
 
-  /* ---- Main layout ---- */
-  #main-layout {
-    display: grid;
-    grid-template-columns: 1fr 200px;
-    gap: .75rem;
-    flex: 1;
-  }
+#stat-player { display:none; }
 
-  /* ---- Prompt card ---- */
-  #prompt-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: .85rem 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    box-shadow: var(--shadow);
-    flex-wrap: wrap;
-  }
+.map-logo-overlay { pointer-events:none; }
 
-  #prompt-label {
-    font-size: .85rem;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .06em;
-  }
+@media (min-width: 861px) {
+  #stat-player { display:inline-flex; }
+}
 
-  #target-display {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--primary);
-  }
-
-  /* ---- Map container ---- */
-  #map-container {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    display: flex;
-    align-items: stretch;
-    box-shadow: var(--shadow);
-  }
-
-  #map-container svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    min-height: 400px;
-  }
-
-  /* ---- IU regions (SVG) ---- */
-  .iu-region {
-    cursor: pointer;
-    stroke: rgba(255,255,255,0.6);
-    stroke-width: 1;
-    transition: opacity var(--transition);
-  }
-
-  .iu-region:hover:not(.correct):not(.wrong-flash) {
-    opacity: 0.72;
-  }
-
-  .iu-region.correct {
-    fill: #1D9E75 !important;
-    cursor: default;
-    pointer-events: none;
-  }
-
-  .iu-region.wrong-flash {
-    animation: shake 0.3s ease;
-  }
-
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    25%      { transform: translateX(-4px); }
-    75%      { transform: translateX(4px); }
-  }
-
-  @keyframes pulse-correct {
-    0%   { filter: drop-shadow(0 0 0px #1D9E75); }
-    50%  { filter: drop-shadow(0 0 10px #1D9E75); }
-    100% { filter: drop-shadow(0 0 0px #1D9E75); }
-  }
-
-  .iu-region.correct {
-    animation: pulse-correct .5s ease;
-  }
-
-  /* ---- Sidebar ---- */
-  #sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: .75rem;
-  }
-
-  .sidebar-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: .85rem 1rem;
-    box-shadow: var(--shadow);
-  }
-
-  .sidebar-card h3 {
-    font-size: .8rem;
-    font-weight: 700;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    margin-bottom: .6rem;
-  }
-
-  #iu-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: .25rem;
-    max-height: 480px;
-    overflow-y: auto;
-    padding-right: 2px;
-  }
-
-  #iu-list::-webkit-scrollbar { width: 4px; }
-  #iu-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-  #iu-list li {
-    font-size: .82rem;
-    padding: .25rem .5rem;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-    color: var(--muted);
-  }
-
-  #iu-list li.done {
-    color: var(--success);
-    background: #f0fdf4;
-  }
-
-  #iu-list li .check {
-    display: inline-block;
-    width: 13px;
-    height: 13px;
-    border: 1.5px solid var(--border);
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  #iu-list li.done .check {
-    background: var(--success);
-    border-color: var(--success);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6l3 3 5-5' stroke='white' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-size: contain;
-  }
-
-  #iu-list li .crown {
-    color: #f59e0b;
-    font-size: .9rem;
-    margin-left: auto;
-  }
-
-  /* ============================================================
-     WIN SCREEN
-     ============================================================ */
-  #win-screen {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
-    text-align: center;
-    gap: 1.2rem;
-  }
-
-  #win-screen h2 { font-size: 2.2rem; font-weight: 800; }
-
-  .win-stats {
-    display: flex;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .win-stat {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem 1.8rem;
-    min-width: 120px;
-    box-shadow: var(--shadow);
-  }
-
-  .win-stat .val {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--primary);
-  }
-
-  .win-stat .lbl {
-    font-size: .82rem;
-    color: var(--muted);
-    margin-top: .15rem;
-  }
-
-  /* ---- Responsive ---- */
-  @media (max-width: 768px) {
-    #main-layout { grid-template-columns: 1fr; }
-    #sidebar { display: none; }
-  }
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 860px) {
+  #main-area { grid-template-columns: 1fr; }
+  #side-panel { display: none; }
+  #prompt-card { flex-direction: row; }
+}
+@media (max-width: 480px) {
+  #header { gap: .4rem; }
+  #header-title { display: none; }
+  #prompt-card { padding: .4rem .6rem; }
+  #logo-wrap { height: 64px; width: 100px; }
+  #game-screen { padding: .4rem; gap: .4rem; }
+}
 </style>
 </head>
 <body>
 
-<!-- ==================== START SCREEN ==================== -->
+<!-- ══════════════════════════════════════════════════════════
+     START SCREEN
+══════════════════════════════════════════════════════════ -->
 <div id="start-screen" class="screen active">
-  <div class="logo-mark">🗺️</div>
-  <h1>PA Intermediate Units<br>Map Quiz</h1>
-  <p class="tagline">The name of an Intermediate Unit will appear. Click its region on the Pennsylvania map to score a point. Identify all 29 IUs as fast as you can!</p>
-
-  <div class="name-field">
-    <label for="player-name-input">Your Name</label>
-    <input type="text" id="player-name-input" placeholder="Enter your name" maxlength="24" autocomplete="off">
+  <div class="icon">🗺️</div>
+  <h1>Schuylkill County<br>School Districts</h1>
+  <p>A school district logo will appear. Click the matching region on the map to score points. Get them all as fast as you can. First-try correct answers earn a crown.</p>
+  <div class="card">
+    <h3>How to play</h3>
+    <ul>
+      <li>Study the logo shown in the panel</li>
+      <li>Click the matching district on the map</li>
+      <li>Wrong clicks flash red — keep trying!</li>
+      <li>Correct districts lock green and show their logo</li>
+    </ul>
   </div>
-
+  <div class="name-field">
+    <label for="player-name">Your Name</label>
+    <input id="player-name" type="text" maxlength="24" placeholder="Enter your name" autocomplete="off">
+  </div>
   <button class="btn btn-primary btn-lg" id="btn-start">Start Game</button>
 
-  <div class="leaderboard-wrap">
+  <div class="leaderboard-wrap" id="start-leaderboard-wrap">
     <div class="lb-header">
-      <h3>Leaderboard</h3>
-      <button class="btn btn-danger" id="btn-reset-lb-start">Reset</button>
+      <h3>🏆 Leaderboard</h3>
+      <button class="btn btn-danger" id="btn-reset-start" style="padding:.25rem .7rem;font-size:.8rem;">Reset</button>
     </div>
     <table>
       <thead>
-        <tr><th>#</th><th>Name</th><th>Score</th><th>Time</th><th>Accuracy</th><th>Crowns</th></tr>
+        <tr><th>Rank</th><th>Name</th><th>Score</th><th>Time</th><th>Accuracy</th><th>Crowns</th></tr>
       </thead>
-      <tbody id="start-leaderboard-body"></tbody>
+      <tbody id="start-lb-body"></tbody>
     </table>
   </div>
 </div>
 
-<!-- ==================== GAME SCREEN ==================== -->
+<!-- ══════════════════════════════════════════════════════════
+     GAME SCREEN
+══════════════════════════════════════════════════════════ -->
 <div id="game-screen" class="screen">
 
-  <div id="top-bar">
-    <span class="bar-title">PA IU Map Quiz</span>
-    <div id="progress-wrap"><div id="progress-fill"></div></div>
-    <div class="spacer"></div>
-    <span class="stat-pill" id="stat-player"></span>
-    <span class="stat-pill" id="stat-score">Score: 0</span>
-    <span class="stat-pill" id="stat-progress">0 / 29</span>
-    <span class="stat-pill" id="stat-timer">0:00</span>
-    <span id="feedback-msg"></span>
+  <!-- Header -->
+  <div id="header">
+    <span id="header-title">Schuylkill County Districts</span>
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <span class="stat" id="stat-player">👤 Player</span>
+    <span class="stat" id="stat-score">Score: 0</span>
+    <span class="stat" id="stat-progress">0 / 12</span>
+    <span class="stat" id="stat-timer">0:00</span>
+    <span id="feedback"></span>
   </div>
 
-  <div id="main-layout">
+  <!-- Main -->
+  <div id="main-area">
 
-    <!-- Left: prompt + map -->
-    <div style="display:flex;flex-direction:column;gap:.75rem;">
+    <!-- Map + prompt stacked in left column -->
+    <div id="left-col">
 
+      <!-- Logo prompt -->
       <div id="prompt-card">
-        <div id="prompt-label">Click on:</div>
-        <div id="target-display">IU 1</div>
+        <div id="prompt-label">Which district has this logo?</div>
+        <div id="logo-wrap">
+          <img id="logo-img" src="" alt="">
+          <div id="logo-fallback"></div>
+        </div>
       </div>
 
-      <!-- Map -->
-      <div id="map-container">
-        <svg viewBox="-115 -151 999 751" preserveAspectRatio="xMidYMid meet"
-             style="width:100%;height:auto;display:block;"
-             xmlns="http://www.w3.org/2000/svg" id="paiu-map">
+      <!-- SVG Map -->
+      <div id="map-panel">
+        <svg viewBox="0 0 492 290" xmlns="http://www.w3.org/2000/svg" aria-label="Schuylkill County school district map">
 
-          <g id="iu29" class="iu-region" fill="#ff6600"><path d="m 628.08652,380.01648 8.58452,8.58452 -17.55924,9.75513 3.51185,5.85309 23.9276,-5.27278 1.43575,-0.1901 -31.60664,24.58294 2.39125,5.26277 35.80385,-23.28727 16.43366,11.78121 65.16426,-21.07109 6.2433,-12.09637 35.1185,-19.90047 -37.8499,-37.84993 -5.4629,2.73144 -29.2654,-12.09636 -11.31595,15.21801 -0.63534,13.49711 -3.9771,-5.95814 -14.47262,2.73144 3.86705,13.53212 z" /></g>
-          <g id="iu14" class="iu-region" fill="#ff9955"><path d="m 754.87075,377.35408 -15.58721,8.90203 -5.37847,9.87479 -14.89114,3.90657 -17.24899,6.53061 -14.93993,5.87682 -15.6631,5.11188 87.74994,72.07767 -8.77747,6.7968 2.44625,13.56747 14.52188,-2.39644 9.13174,-12.66713 -5.60048,-11.95618 18.29786,-15.45599 9.61294,-14.05174 18.13543,10.05383 10.21861,-13.57064 -21.55929,-20.71842 -5.99547,1.61516 7.09851,-13.27317 -9.90461,-6.15937 z" /></g>
-          <g id="iu13" class="iu-region" fill="#ff8080"><path d="m 651.60734,403.77927 -22.67001,17.07611 18.25378,57.11666 -24.14209,15.89845 9.4213,12.36546 17.95936,2.94416 28.26391,34.74106 25.02534,32.97456 20.02027,-0.58883 11.48222,-15.89845 5.88831,-15.89845 -10.87483,-17.1524 17.48444,-5.63171 2.8117,-10.48487 -1.17767,-17.37053 8.83248,-5.00507 -44.7512,-36.50755 z" /></g>
-          <g id="iu24" class="iu-region" fill="#ff0000"><path d="m 789.25229,468.93693 -19.23906,15.66366 6.46977,11.23697 -9.5344,12.93954 -15.15288,2.72412 -5.959,11.918 -15.83392,4.93745 12.59903,19.57958 -5.10772,13.45031 -16.85545,17.877 59.07923,-0.34051 2.72411,-9.5344 8.00209,-8.00209 c 0,0 8.51285,-4.25643 8.51285,-4.93746 0,-0.68102 9.36415,-3.74565 9.36415,-3.74565 h 5.61848 l 3.06463,-6.64003 -2.04308,-3.91592 8.17234,-4.42668 2.21334,2.3836 2.3836,-2.04309 -2.21334,-2.89437 2.21334,-1.53231 -3.74566,-1.87283 -2.21334,-2.3836 11.57749,-6.64003 -1.36206,-3.06463 6.98054,-7.49131 -2.72411,-2.21335 4.93746,-3.5754 -6.46978,-7.32105 -4.7672,1.02154 -3.74565,-3.23489 2.55385,-3.5754 -2.04308,-2.21334 -3.5754,2.21334 -4.42669,-4.25643 3.23489,-3.06462 -17.02572,-12.76929 -10.7262,-5.959 z" /></g>
-          <g id="iu25" class="iu-region" fill="#4466ff"><path d="m 812.95973,552.81637 12.76929,2.04309 6.29951,2.3836 4.7672,4.42668 9.19389,-6.98054 7.83183,-4.7672 6.29951,-0.17026 7.83183,-1.02154 v -4.08617 l -7.1508,0.68103 3.40514,-12.76929 -5.44823,-7.49131 -6.12925,-10.89646 -1.1918,1.87283 -8.17235,-11.918 -7.66157,6.81028 2.3836,3.06463 -6.98054,5.44823 2.55386,4.59694 -11.40723,6.12926 3.91591,6.46977 -11.06671,6.98055 1.87283,4.59694 z" /></g>
-          <g id="iu26" class="iu-region" fill="#cc44ff"><path d="m 860.69181,507.01869 7.36466,8.0551 -9.20583,8.28524 0.92059,2.76175 5.0632,7.82495 -3.68233,10.12641 8.0551,0.4603 -0.23015,5.0632 9.43598,-7.13452 4.83305,-6.44407 -1.61102,-8.97569 6.67423,-5.75364 4.60291,-2.07131 6.21394,-7.13451 1.38087,1.38087 5.98379,-5.98379 -0.92059,-4.14262 5.06321,-5.75364 -1.84117,-4.83306 -9.43597,-5.29335 -12.19772,14.95947 2.07131,2.30145 -2.76175,4.37277 -8.05509,-5.52349 -4.37277,-2.76175 -1.84117,2.30146 -4.60291,-4.60292 z" /></g>
-          <g id="iu23" class="iu-region" fill="#ffee22"><path d="m 790.17482,468.5988 1.84117,2.5316 3.45218,-2.76174 6.67423,2.99189 2.76175,-2.99189 5.29335,10.81684 2.99189,-2.30145 4.60291,8.97568 3.45219,-1.84117 -1.38088,5.06321 c 0,0 5.06321,5.29335 5.06321,3.91247 0,-1.38087 4.37277,0.46029 4.37277,0.46029 l -2.76175,3.91248 6.90437,2.99189 1.61102,-2.99189 5.29335,9.66612 3.68233,-2.76175 7.82495,10.12641 6.67423,6.44408 1.84116,1.84116 7.36466,-8.74553 -6.67422,-7.59481 6.67422,-8.51539 4.60292,4.60292 2.30145,-3.91248 12.19772,9.43597 2.9919,-4.60291 -1.38088,-2.76175 12.19772,-13.34845 -94.58987,-69.50399 -6.90437,9.43597 0.92059,3.68233 3.68233,-2.07131 7.36466,2.76175 -1.84117,3.45218 5.5235,3.68234 -2.5316,2.99189 8.97568,5.75364 2.30146,-2.99189 2.5316,7.5948 -7.59481,9.66612 -2.5316,-2.99189 -3.45219,4.83306 -14.03888,-9.20583 z" /></g>
-          <g id="iu22" class="iu-region" fill="#ffd42a"><path d="m 864.60693,389.892 -43.03724,38.66447 84.46344,61.67904 3.4522,5.75364 -5.0632,5.75364 0.9206,4.60291 7.1345,-6.44408 8.0551,-1.38087 6.4441,-8.0551 4.8331,-3.45218 5.0631,1.38087 9.436,-8.97568 -7.5948,-8.97568 -5.9838,-6.67423 -2.0713,1.15073 -6.9043,-8.97568 -9.8963,-11.73743 -5.7536,-0.69043 -1.8412,-9.66612 -3.9125,-6.90437 -8.2852,3.68233 -4.6029,-5.5235 -1.8412,-8.74553 0.4603,-5.5235 0.4603,-7.59481 -3.9125,-5.52349 -3.6823,-2.9919 -2.9919,-1.84116 -5.0633,4.14262 z" /></g>
-          <g id="iu21" class="iu-region" fill="#888888"><path d="m 776.37247,364.36499 -17.45442,12.37676 62.83589,53.3153 23.80139,-26.02294 -9.8379,-9.52059 2.5389,-8.25118 -9.5206,-11.74206 -7.29915,5.07765 -8.25117,-14.91559 -3.80824,1.58677 -7.29912,-3.49089 -0.6347,-10.47264 20.62794,-6.02971 -16.50235,-29.19647 12.05941,-6.98176 -27.92706,-31.10059 -16.50235,13.64617 7.29911,14.91559 -20.31058,8.88589 3.49088,5.07764 -20.31059,10.1553 z" /></g>
-          <g id="iu20" class="iu-region" fill="#ffeeaa"><path d="m 846.10884,404.98644 21.26265,-13.96353 3.17353,-7.61647 -3.49088,-4.12559 5.07765,-4.44294 -5.07765,-6.66441 3.80823,-6.98176 -3.49088,-5.71236 7.29912,-5.395 4.44294,3.17353 5.71235,-6.34706 -0.31735,-3.80823 -2.22147,-7.29912 6.02971,2.22147 2.53882,-4.44294 -3.80824,-6.34706 -11.74205,-17.45441 18.08911,-11.74206 4.44294,-10.47265 8.25118,-8.25117 3.80824,-5.07765 6.0297,-10.47265 3.80824,-4.44294 -2.85618,-6.34706 10.15531,-13.96353 10.4726,-8.56852 3.1736,0.31735 5.0776,-3.49088 -7.2991,-7.61647 -3.8082,-0.31736 3.8082,-4.44294 -4.443,-2.53882 -4.1255,4.12559 -3.1736,-3.80824 -4.12556,-1.90412 -9.83794,3.49089 -2.22147,-3.80824 -6.98176,-7.93382 -5.07765,2.53882 -1.58676,17.13706 4.12558,0.31735 -6.66441,6.66441 -5.71235,15.23294 -10.79,-0.6347 -3.17353,9.83794 -55.85412,4.44294 -5.71235,5.395 -2.85618,-4.12559 -15.86764,24.75353 24.11882,26.65765 -11.10735,8.56853 16.8197,26.34029 -22.2147,6.98177 1.90411,9.52059 5.71236,4.12558 5.395,-1.26941 7.61647,12.69412 0.31735,2.22147 7.61647,-3.80823 8.88588,12.69411 -2.85617,8.25118 z" /></g>
-          <g id="iu19" class="iu-region" fill="#806600"><path d="m 771.58723,202.90991 -9.06677,14.89542 -0.21587,7.98739 15.11128,9.7144 7.1239,0.8635 1.07937,4.10164 -1.727,3.88576 7.12389,11.4414 2.59051,16.83829 6.26039,2.59051 10.5779,-15.11129 1.51113,2.37463 5.18101,-5.39689 20.50819,0.21588 35.4036,-4.74926 2.5905,-9.06678 h 11.8731 l 6.4763,-12.95253 -1.727,-3.88576 6.4763,-2.5905 -4.7493,-3.88576 4.3175,-14.67954 -8.635,-11.87315 -1.0794,-6.90802 -7.9874,-7.77152 4.9652,-5.39689 -3.8858,-9.28265 2.5905,-3.45401 -5.8286,-6.47626 5.181,-0.64763 -3.0223,-10.5779 -5.8286,1.07938 -1.0794,-4.31751 6.4763,-5.39689 -4.1017,-0.64763 -3.8857,-0.64762 0.4317,-6.04452 -6.6921,0.8635 -3.454,-4.53338 -12.7367,1.727 -3.8857,-16.40655 -6.6922,-3.02226 -3.6699,-8.850891 -126.93478,3.238131 7.98739,74.26119 -0.8635,6.26039 4.10163,3.88576 5.18102,-4.53338 1.727,3.66988 5.61277,0.43175 3.66988,-10.14615 15.11129,-0.43175 4.10163,8.41915 h 2.80638 l 1.07938,2.5905 -2.37463,1.29526 3.88576,8.20327 6.26039,1.51113 z" /></g>
-          <g id="iu18" class="iu-region" fill="#782121"><path d="m 702.4263,190.03914 -13.6288,53.97001 -1.3629,20.44318 7.087,18.53516 5.1789,-2.18061 1.3629,1.63546 9.2676,-7.63213 5.4515,3.81607 2.7258,7.9047 -0.2726,7.63212 10.3579,-7.35955 6.2692,9.26758 -2.1806,2.45318 -4.0886,-2.45318 -0.5452,4.08864 -23.9867,8.72242 2.7258,9.81273 -11.9933,14.7191 11.1756,0.27257 5.7241,8.17728 9.5401,-5.45152 1.3629,2.18061 10.903,-3.27091 2.4532,2.45318 10.3579,-4.90637 -2.7258,-4.63378 19.8981,-8.99501 -1.6355,-4.08863 18.2626,-8.99501 -4.0886,-11.99333 -0.8178,-5.72409 14.7191,-9.54016 5.179,4.36122 7.0869,-10.35789 -2.9983,-2.99833 -4.3612,-1.0903 -1.0903,-17.71743 -5.4515,-3.81606 -1.6355,-5.17894 1.908,-4.08864 -0.8177,-3.54349 -7.9047,-0.27257 -5.4515,-5.17894 -4.6338,-0.54515 -5.1789,-3.54349 -1.3629,-5.45152 1.908,-5.72409 2.9984,-3.54348 3.5434,-4.90637 1.9081,-3.27091 -5.179,-5.17894 1.6355,-2.99833 -4.3612,-1.09031 -3.8161,0.27258 -0.8177,-5.17894 -2.7258,-3.54349 3.8161,-0.27257 -2.9983,-5.99667 -2.5241,1.81514 -3.547,-8.18539 -15.8251,0.54569 -1.637,10.09532 -7.094,1.90993 -2.4557,-5.72978 -4.9112,9.54963 -3.8198,-3.00132 -2.7285,-1.63707 -3.2742,0.81854 h -1.637 l -3.0014,-4.0927 z" /></g>
-          <g id="iu16" class="iu-region" fill="#aaaaaa"><path d="m 596.07523,278.40766 -9.82248,-3.00132 -3.81985,13.91517 -13.64232,-0.81854 -11.1867,5.45693 -0.81854,5.72978 -33.83296,38.47134 0.81854,30.01311 15.2794,4.91124 16.09794,1.63708 8.73109,-3.81985 2.45561,3.00131 7.36686,1.36423 0.54569,4.36554 4.91124,-1.09138 0.81854,4.91123 10.91385,-3.547 v 3.547 l -6.54831,3.27416 9.54962,3.27416 9.54963,-4.36555 8.73108,-4.91123 17.18933,-2.45562 49.65805,-23.73764 -6.27547,-15.00655 15.2794,-3.54701 3.27416,4.63839 2.18277,-9.82247 12.55094,-16.09794 28.15938,-17.10095 -6.35605,-8.68292 -8.85713,4.64758 -1.68491,-13.94254 -6.39382,-3.97406 -8.68732,1.67293 -7.91255,0.27285 -7.6397,-15.00656 1.63708,-22.64625 -15.00655,1.90992 -27.83034,31.65019 -15.55225,1.36423 -10.91385,-5.72977 z" /></g>
-          <g id="iu15" class="iu-region" fill="#ff7f2a"><path d="m 551.34738,398.87919 -4.64091,0.97704 1.70981,4.39665 -60.33181,34.44042 4.15239,3.90814 -10.99162,6.59497 -7.81627,6.35072 -5.12943,7.08349 4.88517,12.70143 4.88517,-2.44258 1.95406,5.37368 -5.37368,4.64091 11.48014,16.85383 -10.50311,11.96866 25.89139,22.47176 13.18995,-11.7244 5.37368,-0.73277 10.74737,-3.17536 7.57201,0.24426 9.28181,-2.19833 9.52608,-9.77033 10.99162,10.01459 6.83924,-10.25885 14.6555,12.45718 11.48014,-15.8768 8.30478,-2.19832 0.24426,-4.88517 6.83924,-6.10646 5.37368,7.0835 6.59497,-8.06053 7.81627,-3.17536 4.39665,-5.12942 7.32775,-1.46555 -19.29641,-57.15645 -13.67846,8.06052 -4.1524,-6.35072 17.83086,-7.32775 16.36531,-16.85382 -25.64712,5.37368 -4.1524,-6.83923 12.45718,-1.95407 5.8622,-5.12942 -10.50311,-9.77034 -9.77033,4.64091 h -6.35072 l -6.59497,4.39665 -5.61795,3.17536 -6.35071,-0.48852 -5.12943,-2.68684 -15.14402,5.61794 -1.95406,-11.7244 -17.83086,4.88517 z" /></g>
-          <g id="iu12" class="iu-region" fill="#4444cc"><path d="m 483.31591,449.48208 -14.421,16.07587 -17.0215,21.27688 -9.69281,21.5133 -9.6928,14.18459 -8.03794,24.1138 -6.85588,15.13023 -13.71177,19.62202 301.42255,-0.94564 -19.85843,-23.16817 0.94564,-4.72819 -6.38306,-4.25538 v -7.56511 l -26.00509,-29.31482 -19.14919,-1.65487 -8.98358,-12.05691 -4.49179,-2.6005 -2.36409,-4.01897 -6.14666,8.51075 -1.65487,3.78256 -6.38307,-0.47282 -13.23895,17.73074 -13.00254,-13.23895 -5.67383,9.6928 -14.89382,-9.92921 -10.16563,11.34767 -14.18459,1.41846 -10.87485,3.07333 -7.56512,1.18205 -11.11126,12.0569 -26.95072,-22.45894 13.00254,-13.00254 -12.76613,-16.54869 6.85588,-5.67383 -3.78255,-4.49179 -4.25538,3.78256 -4.01897,-11.11127 14.89382,-13.23895 z" /></g>
-          <g id="iu1" class="iu-region" fill="#ffd42a"><path d="m 12.809235,418.35652 -5.1383898,159.29007 179.3297948,4.62455 2.96897,-5.89104 3.58254,-1.79127 -3.13472,-5.3738 3.58253,-0.89563 1.79127,3.80644 2.91081,-2.46299 -3.13472,-3.35863 0.22391,-3.13471 -8.50852,-8.95634 18.36049,-35.15362 -28.43637,-25.30164 -11.19541,6.71725 -8.50852,13.4345 -1.79127,-1.11954 -1.34345,-7.16507 -9.85197,-6.26943 -3.80644,1.34345 -10.29979,-5.82162 -2.23908,6.04553 -2.01518,5.82161 -7.38897,-1.56735 -8.95634,-14.55405 3.58254,-3.80644 2.6869,2.6869 2.23908,-4.92599 -1.11954,-4.92598 -6.04553,1.56736 -4.92598,-3.58254 -2.91081,0.44782 -4.478169,-4.92598 6.045529,-2.6869 0.89563,1.34345 3.35863,-2.23909 -43.43823,-18.8083 -27.764638,-31.34717 -26.869007,-2.463 z" /></g>
-          <g id="iu27" class="iu-region" fill="#668000"><path d="m 15.508922,336.01142 -1.791267,79.26357 24.85383,1.56736 29.779814,-27.54073 5.59771,-0.89564 -0.895634,-51.94674 z" /></g>
-          <g id="iu4" class="iu-region" fill="#a08030"><path d="m 20.015022,183.64578 -4.872023,152.33192 54.891459,0.6496 2.923213,38.65138 57.489869,2.27361 0.64961,-16.56488 14.94087,0.64961 0.9744,-33.12976 16.88968,1.29921 -0.6496,-14.61607 0.6496,-4.22242 -5.19682,-10.71845 -7.79524,-2.92322 1.62401,-4.22242 -7.47044,-6.82083 -11.69285,-0.9744 -0.64961,-13.31686 -33.129753,-1.62401 0.324801,-55.21626 -16.240077,-0.3248 v -12.99206 h -4.872022 l -2.273611,2.27361 -39.625786,-1.62401 1.299206,-18.51369 z" /></g>
-          <g id="iu5" class="iu-region" fill="#505050"><path d="m 143.11243,43.46522 -51.318634,28.582533 -24.035313,8.769642 -6.820832,5.846427 -37.027375,14.616068 -2.598412,82.17478 17.214481,1.62401 -0.974404,18.83849 48.070626,2.27361 0.974404,10.39365 16.240069,1.94881 -0.3248,-13.64167 9.41925,-8.76964 7.47043,-5.52163 7.14564,3.89762 1.2992,3.89762 11.69286,-7.79524 -0.3248,-12.66725 h 4.54722 v -18.18888 l -5.19683,-1.29921 1.29921,-13.96646 25.33452,1.624 v 15.59048 l 17.53928,0.6496 0.9744,15.59047 84.7732,1.9488 1.29921,-43.52339 4.87202,-2.27361 -0.3248,-33.77936 -130.89502,-1.948812 z" /></g>
-          <g id="iu6" class="iu-region" fill="#cccc00"><path d="m 164.89155,145.94785 -23.71051,-1.62401 -1.9488,11.69286 3.57281,2.59841 0.97441,19.81289 h -3.89762 l -0.3248,13.31686 -9.41925,6.17123 -11.36805,-8.76964 -15.91528,13.31686 -2.27361,68.85793 33.12976,1.94881 0.9744,14.29126 14.29127,0.64961 6.17123,10.39365 12.66725,14.94087 5.19682,0.3248 -1.624,5.52162 8.12003,6.49603 3.57282,-4.54722 13.64167,3.89762 4.87202,-2.59841 14.29127,5.52163 3.24801,-4.54723 8.12004,5.19683 13.96647,0.3248 0.9744,13.96647 16.88968,1.9488 0.6496,-9.74404 3.57282,-2.92321 2.92321,4.54722 7.79524,-0.3248 0.6496,13.31686 12.01766,0.3248 2.59841,-5.52163 0.6496,-34.75376 14.61607,1.29921 10.06885,0.3248 1.94881,2.59841 4.22242,-1.29921 2.92321,2.59842 2.92322,-1.94881 -2.27361,-4.54722 1.2992,-8.12004 1.29921,-20.4625 14.61607,-0.3248 -0.3248,-19.81288 -23.71052,-2.92322 -1.624,9.09443 -6.17123,2.27362 0.3248,-13.31686 -4.22242,-4.87202 -4.87202,6.17123 -35.07857,-22.73611 2.27361,-55.54107 -85.098,-0.9744 0.3248,-16.24008 -19.16329,-1.94881 z" /></g>
-          <g id="iu10" class="iu-region" fill="#aa4400"><path d="m 447.06307,190.51711 -0.6496,19.16329 -25.98412,1.2992 1.94881,22.41131 -19.16329,30.20653 -61.38749,-5.19682 -0.64961,19.81289 -12.99206,0.3248 -2.27361,1.62401 v 31.50575 l -8.44484,1.62401 -4.87202,-4.87203 -6.17123,0.3248 0.3248,20.4625 6.49603,8.12004 -8.76964,5.52162 -14.29127,-0.9744 0.32481,22.73611 -0.97441,2.59841 36.37777,1.29921 0.64961,16.24007 21.7617,0.64961 5.84643,-1.94881 8.76964,-16.56488 11.36805,-1.29921 24.68492,-17.86408 8.76964,9.41924 -8.12004,7.47044 25.98412,10.71845 21.7617,-11.36806 7.47044,4.54723 3.57282,0.9744 3.57281,-1.94881 1.29921,4.22242 4.87202,-3.89762 51.96825,-25.65932 15.91527,-16.24007 19.48809,-22.41131 -2.27361,-3.24802 3.57282,-6.82083 -28.58254,0.97441 2.59842,-13.31687 5.19682,-2.27361 3.24802,-2.59841 -2.92322,-5.19682 -11.04325,5.19682 -4.22242,-7.47043 7.14563,-5.19683 -8.44484,-2.59841 -13.96646,-12.66725 -3.57282,-9.74405 -6.82083,-3.89761 -4.54722,-4.87203 v -4.22242 l -7.79524,-9.41924 -0.3248,-25.98412 z" /></g>
-          <g id="iu17" class="iu-region" fill="#cc44aa"><path d="m 478.89446,99.927765 0.47959,40.284885 17.26494,1.91833 1.95143,24.51698 5.0123,0.73711 -0.88453,29.77894 -21.81824,-0.7371 1.17937,21.81823 11.4988,18.42757 6.4865,2.21131 1.76905,3.53809 10.90912,14.88947 12.08848,8.99265 -2.94841,4.86488 2.06389,7.22361 10.76169,-3.09583 3.24326,4.12777 -7.66587,4.12778 -2.65357,11.20395 h 20.19661 l 6.4865,2.80099 4.71746,-1.03194 6.92877,-3.83293 14.44721,-0.29484 3.68551,-12.82559 9.28749,1.76905 4.71746,-4.86488 7.2236,-1.17936 6.63393,-1.47421 7.51844,1.47421 7.66587,3.24325 8.99265,-0.7371 6.48651,-1.91647 6.92876,-7.37103 21.67082,-23.29244 15.03689,-2.06389 12.08848,-38.32933 2.80099,-15.62658 3.24325,-1.03194 1.03195,-6.63392 8.40297,2.80099 4.42261,3.98035 2.50615,-5.60198 -6.04424,-4.12778 1.32678,-7.2236 -7.07618,-72.236065 z" /></g>
-          <g id="iu7" class="iu-region" fill="#cc8866"><path d="m 151.99671,376.86912 -3.7144,1.32657 -1.72454,3.58174 1.32657,2.7858 -7.4288,8.22475 -6.5002,4.24503 1.06125,6.89817 4.90832,0.79594 4.37769,4.77566 v 20.56187 l -6.76552,7.16348 -4.90831,5.30629 -2.38783,13.92901 -0.79595,4.51034 -2.65314,8.49006 -0.66329,4.90831 -7.95943,2.12252 0.26532,7.56146 -5.70426,0.26531 -1.8572,4.90832 12.20446,13.13306 3.58174,-0.26531 2.65315,-3.58175 2.7858,-6.76551 9.81663,5.43894 3.7144,-1.59189 10.08194,7.42881 0.39798,7.16348 3.18377,0.26532 8.62272,-12.86775 2.25517,-4.11237 7.03083,-2.65314 4.90831,0.66328 5.96958,6.5002 10.34726,8.88803 5.04097,6.76552 6.10223,-2.12251 9.286,-12.07181 3.05112,-5.04097 5.17363,3.31643 10.2146,-18.17404 23.61298,-38.73589 -2.12252,-2.65315 1.45923,-3.7144 -8.22474,-3.97971 -5.30629,11.40852 -7.4288,0.66328 -2.7858,-3.05111 -18.17404,-10.21461 -3.7144,4.37769 -2.52048,-2.38783 2.38783,-4.37769 -5.96958,-4.51034 -2.25517,2.65314 -4.37769,-3.18377 -4.643,5.83692 -10.34726,5.43894 -13.79634,-12.46977 4.77565,-0.79595 6.10223,-4.77566 -0.53062,-3.44908 1.8572,-2.91846 -4.77566,-2.65314 -3.05112,3.7144 -11.27586,-11.93915 11.93915,-13.26572 -2.52049,-5.70426 -7.95943,-0.79594 -3.58174,8.88803 z" /></g>
-          <g id="iu3" class="iu-region" fill="#c8ab37"><path d="M 72.566406 376.44727 L 72.380859 389.03711 L 37.761719 416.06641 L 64.976562 448.09375 L 107.00195 465.49609 L 99.041016 469.57031 L 102.00195 474.56836 L 108.85352 478.45703 L 116.44336 477.53125 L 127.18164 473.27344 L 124.58984 469.75586 L 129.95898 459.57227 L 129.77344 450.87109 L 132.36523 439.94922 L 142.36133 430.69141 L 143.84375 409.58594 L 138.66016 404.40234 L 133.10547 403.10742 L 131.80859 396.99805 L 136.4375 392.92383 L 140.14062 391.62891 L 145.69531 385.14844 L 144.02734 378.48438 L 72.566406 376.44727 z M 93.863281 411.17383 L 96.222656 411.95898 L 94.650391 414.00391 L 99.210938 419.19336 L 104.87109 412.27344 L 111.16211 415.57617 L 112.73438 413.375 L 114.77734 415.10547 L 112.73438 419.19336 L 116.66406 422.65234 L 111.94727 424.06836 L 112.41992 427.68359 L 108.95898 434.91797 L 111.79102 439.16406 L 109.74609 441.36523 L 106.12891 436.49023 L 105.6582 429.72852 L 102.51367 431.61523 L 96.851562 437.74805 L 88.990234 432.87305 L 86.789062 426.89844 L 86.789062 422.81055 L 81.441406 423.91016 L 80.970703 419.82227 L 88.361328 420.13672 L 88.361328 414.47656 L 90.876953 414.47656 L 93.863281 411.17383 z " /></g>
-          <g id="iu2" class="iu-region" fill="#993300"><path d="m 80.895439,419.55088 0.471737,4.08839 5.346361,-1.10072 v 4.0884 l 2.201443,5.97534 7.862294,4.87462 5.660856,-6.13259 3.14491,-1.88695 0.47174,6.76158 3.61666,4.87462 2.04419,-2.20144 -2.83042,-4.24564 3.45941,-7.23331 -0.47174,-3.61666 4.71738,-1.41521 -3.93115,-3.45941 2.0442,-4.0884 -2.0442,-1.7297 -1.57246,2.20144 -6.28984,-3.30216 -5.660847,6.91882 -4.560131,-5.18912 1.572459,-2.04419 -2.358689,-0.78623 -2.987672,3.30216 h -2.515934 v 5.66085 z" /></g>
-          <g id="iu11" class="iu-region" fill="#ff9955"><path d="m 405.63222,579.8127 16.35561,-27.25936 15.09749,-37.74373 5.45188,-7.96812 16.35561,-28.51748 11.32312,-15.51686 26.4206,-20.54936 -3.35499,-5.45187 59.97058,-33.54998 0.83875,-14.25874 15.93624,-3.77437 1.6775,8.38749 17.61374,-4.19375 -0.16962,-4.0022 -7.81641,3.05031 -1.71579,-6.86319 h -4.38482 l -2.66902,-4.38482 -7.81641,2.28773 -1.71579,-4.19417 -8.1977,5.33804 -29.54984,-6.4819 -2.28773,-31.26564 -55.47745,27.83404 -10.86671,0.19065 -8.38834,-5.33804 -20.01764,11.62929 -13.91702,6.29126 -8.76963,7.62576 -8.76963,-4.38481 -4.7661,2.85966 -2.47838,14.10767 2.85967,6.10061 2.47837,0.19064 3.05031,-9.15092 2.09708,1.14387 -3.43159,14.48895 3.43159,1.14387 -0.38129,3.62224 -0.38129,2.47837 -17.53926,30.12177 9.9135,7.62577 8.57898,-11.43865 15.06089,18.11119 -6.67254,25.16503 -2.47838,1.7158 -7.62576,-6.67255 -11.05736,18.1112 3.24095,4.00352 -2.47838,8.38834 -9.15091,20.01764 -7.24448,20.58956 -12.20123,20.58957 z" /></g>
-          <g id="iu8" class="iu-region" fill="#cc44cc"><path d="m 189.66779,578.91724 166.66091,1.58724 13.22706,-19.57604 19.04696,-48.14648 -4.50727,-6.13463 14.16411,-17.70514 7.08206,4.60334 8.14436,-23.72489 -15.58052,-19.12155 -7.79026,11.33129 -11.33129,-8.85257 19.47565,-32.57745 -10.62308,-16.64283 3.89513,-15.58052 4.60334,-2.12462 6.37385,4.24923 1.77051,1.06231 3.54103,-5.31154 7.08205,-4.24923 12.3936,-4.95744 -26.55771,-10.62308 7.79026,-6.72796 -11.68539,-9.91487 -23.37078,17.70513 -12.3936,1.06231 0.35411,4.24924 -8.14437,13.4559 -6.72795,0.70821 -20.18386,-0.35411 -0.7082,-18.05924 -36.11848,0.35411 -9.20668,25.49539 -4.60333,12.0395 -9.56078,23.37078 -5.31154,9.91488 -13.81,24.78719 -17.70514,32.22335 -7.43616,-1.06231 -11.68539,16.28873 -21.60027,36.11848 8.85257,13.81001 -6.72795,3.89513 z" /></g>
-          <g id="iu9" class="iu-region" fill="#d45500"><path d="m 274.69208,100.66765 0.3541,33.99386 -6.72795,-0.3541 -1.41641,99.14878 33.99386,23.37078 6.01975,-6.01975 2.47872,17.35104 7.43615,-3.54103 -0.7082,-7.79026 86.75517,8.49847 18.05924,-30.45284 0.70821,-22.30847 25.1413,-1.77052 -0.70821,-18.76744 34.70207,-0.70821 1.06231,5.31154 21.60027,-0.7082 v -28.32822 l -4.95744,-1.06231 -0.3541,-24.079 -17.70514,-1.41641 v -40.01361 z" /></g>
-          <g id="iu28" class="iu-region" fill="#336633"><path d="m 131.17356,376.50358 14.18093,0.70905 7.44499,0.70904 8.15403,8.86308 5.67237,-8.86308 7.09046,0.35453 3.54523,4.25428 -10.99021,10.63569 10.28117,13.47188 2.48166,-1.77262 6.02689,2.83619 -6.38141,10.63569 -7.44499,1.06357 15.2445,15.95354 11.69926,-10.63569 0.35452,-5.67237 9.2176,4.6088 2.48167,4.96332 26.94376,10.28118 4.6088,-2.12714 3.54523,3.54523 9.2176,-9.92665 6.73594,3.54523 28.36185,-68.77749 -2.48166,-15.95354 -13.11736,-0.35452 -2.12714,-12.76284 -6.38141,0.35453 -2.12714,-4.96333 -4.6088,3.89976 v 8.86308 l -18.78973,-1.06357 -0.70905,-14.18093 -15.59901,-1.06357 -5.31785,-4.6088 -3.89976,4.25428 -13.47188,-5.31785 -4.6088,4.6088 -14.18092,-7.09046 -3.54523,6.02689 -9.21761,-7.44498 1.4181,-6.0269 -8.86308,0.35453 1.06357,19.49877 -15.59902,-0.70905 -0.70905,29.42542 -16.30806,-0.35452 z" /></g>
+          <!-- County outline (background shape) -->
+          <path id="county-outline"
+            d="M 469.29128,137.2067 431.26633,105.20237 388.17138,64.008669 366.94078,40.559948 353.94893,25.349968 338.42207,31.68746 253.81655,2.8518714 216.74222,42.461196 205.33474,94.111755 15.209981,182.83664 144.49482,287.72213 l 33.5887,-10.13998 16.16061,-4.11937 44.99619,-1.58438 9.50624,-6.65436 10.13999,0.31687 3.48562,-4.75312 8.87249,1.90125 12.04123,-9.82311 22.4981,-9.82311 9.82311,0.31687 7.28811,-10.13999 4.43625,3.8025 4.11937,-6.97124 5.38687,6.65436 4.43624,-2.21812 4.11937,3.8025 11.09061,-42.4612 66.22679,-32.00433 5.38687,-0.95063 29.46934,-19.01247 1.90125,-4.43625 3.16874,0.63375 z"/>
+
+          <!-- Decorative border region (no district) -->
+          <path id="path13-border"
+            d="m 218.06466,41.348604 35.19554,0.246123 2.95347,10.091028 11.07552,15.751849 13.29062,-8.36817 16.98246,-2.461226 3.1996,3.937962 36.67227,-8.36817 1.72286,6.153066 25.10451,-4.184085 2.2151,-4.67633 7.13756,-1.476736 -18.70532,-21.41267 -15.99797,6.645312 -85.40456,-31.0114532 z"/>
+
+          <!-- ─────────────────────────────────────────────────────
+               DISTRICT REGIONS
+               Each path has class="district" and an id matching
+               the DISTRICTS array in the JS below.
+               ───────────────────────────────────────────────────── -->
+
+          <path class="district" id="shenandoah"
+            d="m 221.51038,88.604151 44.5482,-22.643283 4.67633,14.275113 -5.66082,0.246123 0.49224,5.906943 -9.59878,1.230614 1.23061,6.399188 8.86042,13.290621 -18.95145,7.6298 -3.69184,-4.67633 3.1996,-0.73836 -2.70735,-6.64532 12.55225,-4.430203 -1.96898,-3.937962 -21.16655,5.414698 z"/>
+
+          <path class="district" id="mahanoy"
+            d="m 297.26294,56.658472 -17.65726,3.104574 -12.4183,6.791255 3.29861,13.388475 -4.65686,0.582107 0.19404,5.433005 -9.70179,1.746322 0.5821,6.403184 -24.64255,5.821076 3.88072,4.8509 22.89623,-6.791259 7.5674,9.701789 -20.76184,6.40319 68.10659,-0.58211 28.91134,-14.358654 -2.52247,-5.62704 -7.17932,-5.821076 2.7165,-6.791255 -2.91054,-2.32843 4.26879,-6.015112 -6.40318,-7.567399 21.73201,-8.731614 -13.58251,1.358252 -0.97018,-6.209148 -37.25488,8.537578 z"/>
+
+          <path class="district" id="tamaqua"
+            d="m 374.0757,47.392124 -7.73606,2.216369 -2.7753,4.509863 -10.92774,2.081475 -22.02895,8.84627 6.93825,8.499357 -4.50986,4.856776 2.7753,3.122213 -2.94876,6.417882 6.93825,5.724056 3.12221,6.07097 -31.39558,14.917235 15.43761,44.57827 46.13937,-13.00922 30.35484,27.05917 19.08019,-10.06046 7.80553,-0.86728 18.90674,-11.96848 9.71355,-8.15245 0.52037,-2.08147 8.84627,-2.7753 -5.03023,-6.24443 -22.20241,-16.82526 -36.25236,-30.875214 z"/>
+
+          <path class="district" id="north-schuykill"
+            d="m 135.85393,128.50101 5.25208,-3.15125 24.50973,0.70028 3.85153,5.60222 0.70028,-4.5518 2.10084,-2.10084 11.55458,17.15681 14.3557,2.80111 25.91029,-25.21 15.05597,-9.10362 6.30251,-1.05041 -2.10084,-7.00278 -7.00278,2.10083 -15.05598,-16.456533 44.8178,-22.058757 -9.8039,-14.705838 -3.15125,-9.803892 -35.71417,0.700278 -11.20445,53.221128 z"/>
+
+          <path class="district" id="saint-clair"
+            d="m 223.89531,119.93096 10.88632,24.31278 -0.72575,8.70905 24.13134,-2.90301 8.89049,11.97495 9.97913,-6.53179 3.99165,11.24919 9.07194,-5.80603 3.08445,7.43898 33.38472,-9.25337 -15.24085,-45.35967 -65.31792,0.36288 -2.90302,-3.99165 z"/>
+
+          <path class="district" id="pottsville"
+            d="m 235.32595,152.0456 23.22415,-2.17726 7.43898,11.97495 10.16057,-6.35035 5.08028,11.06775 -17.41811,7.07611 -0.54432,5.08029 -5.44316,2.3587 -1.81438,-4.35453 -14.87797,5.80604 -0.9072,-8.52762 h -4.17309 l -5.6246,-5.6246 4.35453,-4.35453 -5.6246,-2.72158 z"/>
+
+          <path class="district" id="minersville"
+            d="m 182.86912,141.52052 -31.25757,29.04247 10.33715,9.84491 11.56776,-2.95348 6.64531,16.49022 -10.33715,4.18409 20.42818,17.96695 21.41267,-9.35266 10.58328,-7.38368 16.49021,-4.67633 -2.46122,-4.43021 8.12204,-3.69184 -3.69184,-4.92245 -0.49224,-7.38368 -3.93796,-0.49224 -5.66082,-5.66083 3.69184,-3.69184 -5.16858,-2.95347 5.4147,-8.36817 0.49224,-9.10653 -11.81388,-24.12002 -25.10451,25.35063 z"/>
+
+          <path class="district" id="schuylkill-haven"
+            d="m 278.10299,255.2004 -20.85772,-38.85263 9.8154,-4.49872 -2.45385,-7.77053 2.04488,-6.5436 1.6359,-2.45385 7.77052,5.31668 -3.2718,9.40642 9.8154,-6.13462 5.31667,2.45385 -1.22692,-4.08975 4.9077,-2.45385 2.86282,3.2718 h 3.2718 l 3.2718,-2.45385 -0.40897,10.22437 h -4.08975 l 0.84931,3.59447 -0.72087,4.44533 1.56188,1.56187 -3.24389,3.12374 3.8446,3.0036 3.84461,-2.64317 2.16259,3.96475 4.68561,1.0813 0.96115,2.52302 4.9259,0.24029 2.16259,-0.24029 -1.44172,-4.32518 2.16259,-3.12375 4.20504,1.68202 1.08129,7.80935 -9.73166,9.97195 -11.17338,1.08129 z"/>
+
+          <path class="district" id="tri-valley"
+            d="m 16.456533,183.82297 44.467652,36.7646 72.478775,-18.55737 -0.70028,-3.85153 9.45375,-2.10083 18.90751,-16.1064 -9.45376,-9.10361 31.86265,-29.76182 -10.50417,-15.40611 -3.50139,5.60222 -4.20166,-3.85153 -24.50973,-1.40055 -63.375162,29.41167 z"/>
+
+          <path class="district" id="williams-valley"
+            d="m 61.624463,220.93771 30.462093,22.75903 17.506954,-7.70306 9.80389,-10.15403 12.25486,-12.25486 5.25209,0.70027 -4.20167,-12.25486 z"/>
+
+          <path class="district" id="pine-grove"
+            d="m 92.086556,244.74716 51.820574,43.06709 9.45375,-1.05041 19.60778,-8.0532 21.70862,-5.60222 26.26043,-0.35014 18.55736,-2.10084 -29.06153,-63.72529 -21.35848,8.75347 -18.90751,-17.85709 9.80389,-4.20167 -6.65264,-16.45653 -14.00556,3.50139 -17.50695,15.75626 -9.80389,2.10083 4.90195,16.45653 -5.95237,-1.05041 -21.35847,21.70861 z"/>
+
+          <path class="district" id="blue-mountain"
+            d="m 210.43354,206.93215 29.06153,64.42557 7.35292,-5.95236 11.20445,-0.35014 5.60222,-4.20167 7.35292,2.10083 5.25209,-4.20166 1.75069,-2.80111 -21.00834,-39.91585 9.80389,-4.20167 -3.15125,-8.40333 4.55181,-8.75348 8.0532,5.95236 -3.50139,9.10362 10.15403,-5.60223 4.20167,1.7507 -0.70028,-3.85153 5.25208,-2.80111 3.15125,3.15125 2.45098,0.70028 3.50139,-2.80112 -0.35014,11.20445 -3.85153,-0.35014 -0.70028,8.0532 0.98014,-0.53437 1.36841,1.66164 -3.32328,3.22554 3.71426,2.93231 4.00749,-2.63908 2.05262,4.20298 4.4962,0.78195 1.17293,2.63908 h 7.23303 l -1.46615,-4.59395 2.34585,-3.03006 4.00749,1.85713 1.27066,7.42852 4.39847,3.51878 2.34585,-2.83457 -0.0977,-2.63908 6.35334,3.90975 4.10523,-0.8797 3.1278,3.1278 4.54961,-5.47415 7.38368,-35.44166 47.25555,-22.39716 -30.27309,-27.31962 -79.74373,21.6588 -3.1996,-6.64531 -8.86041,4.67633 -17.47471,6.89143 v 5.16858 l -6.15307,2.70734 -1.47673,-4.18408 -15.01348,5.16858 4.4302,4.92245 -8.86041,3.69184 1.72286,3.93796 -15.75185,4.43021 z"/>
 
         </svg>
       </div>
     </div>
 
-    <!-- Right: IU checklist sidebar -->
-    <div id="sidebar">
-      <div class="sidebar-card">
-        <h3>IU Regions</h3>
-        <ul id="iu-list"><!-- Populated by JS --></ul>
+    <!-- Right: sidebar -->
+    <div id="side-panel">
+      <!-- Score card -->
+      <div class="panel-card">
+        <h3>Stats</h3>
+        <div style="display:flex;flex-direction:column;gap:.35rem;">
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Score</span>
+            <span id="sb-score" style="font-weight:700">0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Found</span>
+            <span id="sb-found" style="font-weight:700">0 / 12</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Accuracy</span>
+            <span id="sb-accuracy" style="font-weight:700">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.88rem;">
+            <span style="color:var(--muted)">Time</span>
+            <span id="sb-timer" style="font-weight:700">0:00</span>
+          </div>
+        </div>
+      </div>
+      <!-- District checklist -->
+      <div class="panel-card" id="checklist-card">
+        <h3>Districts</h3>
+        <ul id="district-list"></ul>
       </div>
     </div>
 
-  </div>
-</div><!-- end #game-screen -->
+  </div><!-- /main-area -->
+</div><!-- /game-screen -->
 
-<!-- ==================== WIN SCREEN ==================== -->
+<!-- ══════════════════════════════════════════════════════════
+     WIN SCREEN
+══════════════════════════════════════════════════════════ -->
 <div id="win-screen" class="screen">
   <div style="font-size:3rem">🎉</div>
-  <h2>You nailed it!</h2>
-  <p style="color:#64748b;max-width:360px">All 29 Pennsylvania Intermediate Units identified.</p>
-
+  <h2>All districts found!</h2>
+  <p style="color:var(--muted);max-width:340px">You identified every Schuylkill County school district.</p>
   <div class="win-stats">
-    <div class="win-stat">
-      <div class="val" id="win-score">0</div>
-      <div class="lbl">First-Try Score</div>
-    </div>
-    <div class="win-stat">
-      <div class="val" id="win-time">0:00</div>
-      <div class="lbl">Total Time</div>
-    </div>
-    <div class="win-stat">
-      <div class="val" id="win-accuracy">0%</div>
-      <div class="lbl">Accuracy</div>
-    </div>
-    <div class="win-stat">
-      <div class="val" id="win-crowns">0</div>
-      <div class="lbl">Crowns 👑</div>
-    </div>
+    <div class="win-stat"><div class="val" id="w-score">0</div><div class="lbl">Score</div></div>
+    <div class="win-stat"><div class="val" id="w-time">0:00</div><div class="lbl">Time</div></div>
+    <div class="win-stat"><div class="val" id="w-accuracy">0%</div><div class="lbl">Accuracy</div></div>
+    <div class="win-stat"><div class="val" id="w-crowns">0</div><div class="lbl">Crowns 👑</div></div>
   </div>
-
-  <div class="leaderboard-wrap">
+  <div class="leaderboard-wrap" id="leaderboard-wrap">
     <div class="lb-header">
-      <h3>Leaderboard</h3>
-      <button class="btn btn-danger" id="btn-reset-lb-win">Reset</button>
+      <h3>🏆 Leaderboard</h3>
+      <button class="btn btn-danger" id="btn-clear-lb" style="padding:.25rem .7rem;font-size:.8rem;">Reset</button>
     </div>
-    <table>
+    <table id="lb-table">
       <thead>
-        <tr><th>#</th><th>Name</th><th>Score</th><th>Time</th><th>Accuracy</th><th>Crowns</th></tr>
+        <tr>
+          <th style="width:3rem">Rank</th>
+          <th>Name</th>
+          <th>Score</th>
+          <th>Time</th>
+          <th>Accuracy</th>
+          <th>Crowns</th>
+        </tr>
       </thead>
-      <tbody id="win-leaderboard-body"></tbody>
+      <tbody id="lb-body"></tbody>
     </table>
   </div>
-
   <button class="btn btn-primary btn-lg" id="btn-restart">Play Again</button>
 </div>
 
-<!-- ============================================================
-     JAVASCRIPT
-     ============================================================ -->
 <script>
 'use strict';
 
-/* ============================================================
-   IU DATA
-   All 29 Pennsylvania Intermediate Units.
-   `id` must match the SVG <g> id exactly.
-   ============================================================ */
-const IU_COUNT = 29;
+/* ══════════════════════════════════════════════════════════
+   DISTRICT DATA
+   id        → must match the SVG path id above
+   name      → display name
+   logo      → path to logo image (relative to this HTML file)
+   alt       → alt text for the image
+══════════════════════════════════════════════════════════ */
+const DISTRICTS = [
+  { id: 'blue-mountain',    name: 'Blue Mountain',          logo: 'logos/bluemountainsign.jpg',      alt: 'Blue Mountain School District logo',        color: '#a8c8f0' },
+  { id: 'mahanoy',          name: 'Mahanoy Area',           logo: 'logos/mahanoysign.jpg',            alt: 'Mahanoy Area School District logo',         color: '#f0c08a' },
+  { id: 'minersville',      name: 'Minersville Area',       logo: 'logos/minerssign.jpg',             alt: 'Minersville Area School District logo',     color: '#b8a5f0' },
+  { id: 'north-schuykill',  name: 'North Schuylkill',       logo: 'logos/northschuylkillsign.jpg',    alt: 'North Schuylkill School District logo',     color: '#a5d8a5' },
+  { id: 'pine-grove',       name: 'Pine Grove Area',        logo: 'logos/pinegrovesign.jpg',          alt: 'Pine Grove Area School District logo',      color: '#f0e08a' },
+  { id: 'pottsville',       name: 'Pottsville Area',        logo: 'logos/pottsvilleareasign.jpg',     alt: 'Pottsville Area School District logo',      color: '#f0a5b8' },
+  { id: 'saint-clair',      name: 'Saint Clair Area',       logo: 'logos/stclairsign.jpg',            alt: 'Saint Clair Area School District logo',     color: '#a5e8f0' },
+  { id: 'schuylkill-haven', name: 'Schuylkill Haven Area',  logo: 'logos/schhavensign.jpg',           alt: 'Schuylkill Haven Area School District logo', color: '#f0b8a5' },
+  { id: 'shenandoah',       name: 'Shenandoah Valley',      logo: 'logos/shenandoahsign.jpg',         alt: 'Shenandoah Valley School District logo',    color: '#d4a5f0' },
+  { id: 'tamaqua',          name: 'Tamaqua Area',           logo: 'logos/tamaquasign.jpg',            alt: 'Tamaqua Area School District logo',         color: '#a5f0d4' },
+  { id: 'tri-valley',       name: 'Tri-Valley',             logo: 'logos/tvbulldogslogo-final.png',   alt: 'Tri-Valley School District logo',           color: '#f0d4a5' },
+  { id: 'williams-valley',  name: 'Williams Valley',        logo: 'logos/williamsvalleysign.jpg',     alt: 'Williams Valley School District logo',      color: '#c8f0a5' },
+];
 
-// Build list of IU ids from the SVG
-const ALL_IU_IDS = Array.from(
-  document.querySelectorAll('.iu-region')
-).map(el => el.id);
-
-/* ============================================================
+/* ══════════════════════════════════════════════════════════
    GAME STATE
-   ============================================================ */
-const state = {
-  playerName:       '',
-  queue:            [],
-  current:          null,
-  score:            0,
-  totalAttempts:    0,
-  firstTryIds:      new Set(),
-  districtAttempts: {},   // id -> wrong count before correct
-  completedIds:     new Set(),
-  timerInterval:    null,
-  elapsedSeconds:   0,
-  gameActive:       false,
+══════════════════════════════════════════════════════════ */
+const S = {
+  playerName:      '',
+  queue:           [],    // remaining districts to ask
+  current:         null,  // current district object
+  score:           0,
+  totalClicks:     0,
+  correctClicks:   0,
+  completedIds:    new Set(),
+  firstTryIds:     new Set(),
+  attempts:        {},
+  seconds:         0,
+  timerHandle:     null,
+  active:          false,
 };
 
-/* ============================================================
-   DOM REFERENCES
-   ============================================================ */
-const ui = {
-  // Screens
-  startScreen:  document.getElementById('start-screen'),
-  gameScreen:   document.getElementById('game-screen'),
-  winScreen:    document.getElementById('win-screen'),
+/* ══════════════════════════════════════════════════════════
+   DOM REFS
+══════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const screens = { start: $('start-screen'), game: $('game-screen'), win: $('win-screen') };
 
-  // Start screen
-  playerInput:  document.getElementById('player-name-input'),
-  btnStart:     document.getElementById('btn-start'),
-  btnResetLbStart: document.getElementById('btn-reset-lb-start'),
-  startLbBody:  document.getElementById('start-leaderboard-body'),
-
-  // Game screen
-  targetDisplay: document.getElementById('target-display'),
-  statPlayer:   document.getElementById('stat-player'),
-  statScore:    document.getElementById('stat-score'),
-  statProgress: document.getElementById('stat-progress'),
-  statTimer:    document.getElementById('stat-timer'),
-  feedbackMsg:  document.getElementById('feedback-msg'),
-  progressFill: document.getElementById('progress-fill'),
-  iuList:       document.getElementById('iu-list'),
-
-  // Win screen
-  winScore:     document.getElementById('win-score'),
-  winTime:      document.getElementById('win-time'),
-  winAccuracy:  document.getElementById('win-accuracy'),
-  winCrowns:    document.getElementById('win-crowns'),
-  winLbBody:    document.getElementById('win-leaderboard-body'),
-  btnResetLbWin: document.getElementById('btn-reset-lb-win'),
-  btnRestart:   document.getElementById('btn-restart'),
-};
-
-/* ============================================================
+/* ══════════════════════════════════════════════════════════
    UTILITIES
-   ============================================================ */
+══════════════════════════════════════════════════════════ */
 function showScreen(name) {
-  ['startScreen','gameScreen','winScreen'].forEach(k => {
-    ui[k].classList.toggle('active', k === name + 'Screen');
-  });
+  Object.keys(screens).forEach(k => screens[k].classList.toggle('active', k === name));
 }
 
 function shuffle(arr) {
@@ -704,318 +644,289 @@ function shuffle(arr) {
   return a;
 }
 
-function formatTime(secs) {
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
+function fmt(secs) {
+  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
 }
 
-function showFeedback(type, msg) {
-  ui.feedbackMsg.textContent = msg;
-  ui.feedbackMsg.className = `show ${type}`;
+function accuracy() {
+  if (S.totalClicks === 0) return '—';
+  return Math.round((S.correctClicks / S.totalClicks) * 100) + '%';
 }
 
-function hideFeedback() {
-  ui.feedbackMsg.className = '';
-  ui.feedbackMsg.textContent = '';
-}
-
-/* ============================================================
-   SIDEBAR LIST
-   ============================================================ */
-function buildIUList() {
-  ui.iuList.innerHTML = '';
-  const sorted = [...ALL_IU_IDS].sort((a, b) => {
-    return parseInt(a.replace('iu','')) - parseInt(b.replace('iu',''));
-  });
-  sorted.forEach(id => {
-    const num = id.replace(/^iu/i, '');
+/* ══════════════════════════════════════════════════════════
+   INITIALIZATION
+══════════════════════════════════════════════════════════ */
+function buildChecklist() {
+  const ul = $('district-list');
+  ul.innerHTML = '';
+  DISTRICTS.forEach(d => {
     const li = document.createElement('li');
-    li.id = `list-${id}`;
-    li.innerHTML = `<span class="check"></span>IU ${num}`;
-    ui.iuList.appendChild(li);
+    li.id = `li-${d.id}`;
+    li.innerHTML = `<span class="dot"></span>${d.name}`;
+    ul.appendChild(li);
   });
 }
 
-/* ============================================================
+function attachMapClicks() {
+  document.querySelectorAll('.district').forEach(el => {
+    el.addEventListener('click', () => handleClick(el.id));
+  });
+}
+
+function resetMap() {
+  document.querySelectorAll('.district').forEach(el => {
+    el.classList.remove('done', 'flash-wrong');
+  });
+  document.querySelectorAll('.map-logo-overlay').forEach(el => el.remove());
+  applyDistrictColors();
+}
+
+/* ══════════════════════════════════════════════════════════
    GAME FLOW
-   ============================================================ */
+══════════════════════════════════════════════════════════ */
 function startGame() {
-  const rawName = ui.playerInput.value.trim();
-  if (!rawName) {
-    ui.playerInput.focus();
-    ui.playerInput.style.borderColor = 'var(--danger)';
-    setTimeout(() => { ui.playerInput.style.borderColor = ''; }, 1200);
+  const name = $('player-name').value.trim();
+  if (!name) {
+    $('player-name').focus();
+    $('player-name').style.borderColor = 'var(--danger)';
+    setTimeout(() => $('player-name').style.borderColor = '', 900);
     return;
   }
 
-  state.playerName       = rawName;
-  state.queue            = shuffle([...ALL_IU_IDS]);
-  state.current          = null;
-  state.score            = 0;
-  state.totalAttempts    = 0;
-  state.firstTryIds      = new Set();
-  state.districtAttempts = {};
-  state.completedIds     = new Set();
-  state.elapsedSeconds   = 0;
-  state.gameActive       = true;
+  S.playerName    = name;
+  S.queue         = shuffle(DISTRICTS);
+  S.current       = null;
+  S.score         = 0;
+  S.totalClicks   = 0;
+  S.correctClicks = 0;
+  S.seconds       = 0;
+  S.completedIds  = new Set();
+  S.firstTryIds   = new Set();
+  S.attempts      = {};
+  S.active        = true;
 
-  // Reset map regions
-  ALL_IU_IDS.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.classList.remove('correct', 'wrong-flash');
-      el.style.pointerEvents = '';
-      // Restore original fill color
-      const orig = el.getAttribute('data-orig-fill') || el.getAttribute('fill');
-      if (!el.getAttribute('data-orig-fill')) el.setAttribute('data-orig-fill', orig);
-      el.setAttribute('fill', orig);
-    }
-  });
-
-  buildIUList();
+  resetMap();
+  buildChecklist();
   updateHUD();
   hideFeedback();
+  $('stat-player').textContent = `👤 ${S.playerName}`;
 
-  ui.statPlayer.textContent = `👤 ${state.playerName}`;
-
-  clearInterval(state.timerInterval);
-  state.timerInterval = setInterval(() => {
-    state.elapsedSeconds++;
-    ui.statTimer.textContent = formatTime(state.elapsedSeconds);
-  }, 1000);
+  clearInterval(S.timerHandle);
+  S.timerHandle = setInterval(() => { S.seconds++; updateTimers(); }, 1000);
 
   showScreen('game');
-  nextQuestion();
+  nextPrompt();
 }
 
-function nextQuestion() {
-  if (state.queue.length === 0) {
-    endGame();
-    return;
-  }
-  state.current = state.queue.pop();
-  const num = state.current.replace(/^iu/i, '');
-  ui.targetDisplay.textContent = `IU ${num}`;
-  hideFeedback();
-
-  const pct = (state.completedIds.size / ALL_IU_IDS.length) * 100;
-  ui.progressFill.style.width = pct + '%';
+function nextPrompt() {
+  if (S.queue.length === 0) { endGame(); return; }
+  S.current = S.queue.pop();
+  loadLogo(S.current);
 }
 
-function updateHUD() {
-  const completed = state.completedIds.size;
-  const total = ALL_IU_IDS.length;
-  const pct = total > 0 ? (completed / total) * 100 : 0;
-
-  ui.statScore.textContent    = `Score: ${state.score}`;
-  ui.statProgress.textContent = `${completed} / ${total}`;
-  ui.progressFill.style.width = `${pct}%`;
+function loadLogo(district) {
+  const img = $('logo-img');
+  const fb  = $('logo-fallback');
+  img.style.display = 'block';
+  fb.style.display  = 'none';
+  img.alt = district.alt;
+  img.src = district.logo;
+  img.onerror = () => {
+    img.style.display = 'none';
+    fb.style.display  = 'block';
+    fb.textContent    = district.name;
+  };
 }
 
-/* ============================================================
-   CLICK HANDLING
-   ============================================================ */
+/* ══════════════════════════════════════════════════════════
+   MAP CLICK HANDLING
+══════════════════════════════════════════════════════════ */
 function handleClick(clickedId) {
-  if (!state.gameActive || !state.current) return;
-  if (state.completedIds.has(clickedId)) return;
+  if (!S.active || !S.current) return;
+  if (S.completedIds.has(clickedId)) return;  // already solved
 
-  state.totalAttempts++;
+  S.totalClicks++;
 
-  if (clickedId.toLowerCase() === state.current.toLowerCase()) {
-    handleCorrect(clickedId);
+  if (clickedId === S.current.id) {
+    onCorrect(clickedId);
   } else {
-    handleWrong(clickedId);
+    onWrong(clickedId);
   }
 }
 
-function handleCorrect(id) {
-  // First-try detection
-  const wrongsBefore = state.districtAttempts[id] || 0;
-  const isFirstTry = wrongsBefore === 0;
-  if (isFirstTry) {
-    state.firstTryIds.add(id);
-    state.score++;
-  }
+function onCorrect(id) {
+  S.correctClicks++;
+  S.score += 10;
+  S.completedIds.add(id);
 
-  state.completedIds.add(id);
+  const district = DISTRICTS.find(d => d.id === id);
+  const isFirstTry = (S.attempts[id] || 0) === 0;
+  if (isFirstTry) S.firstTryIds.add(id);
 
-  // Lock region green
-  const el = document.getElementById(id);
-  if (el) {
-    el.classList.add('correct');
-    el.style.pointerEvents = 'none';
-  }
+  // Lock map region
+  document.getElementById(id).classList.add('done');
+  if (district) addLogoOverlay(district);
 
-  // Update sidebar
-  const li = document.getElementById(`list-${id}`);
+  // Check sidebar item
+  const li = $(`li-${id}`);
   if (li) {
     li.classList.add('done');
-    if (isFirstTry) {
+    if (isFirstTry && !li.querySelector('.crown')) {
       const crown = document.createElement('span');
       crown.className = 'crown';
       crown.textContent = '👑';
-      crown.title = 'First try!';
+      crown.title = 'Correct on first try';
       li.appendChild(crown);
     }
   }
 
-  const crownLabel = isFirstTry ? ' 👑' : '';
-  showFeedback('correct', `Correct!${crownLabel}`);
+  showFeedback('correct', isFirstTry ? '✓ Correct! +10 👑' : '✓ Correct! +10');
   updateHUD();
 
-  state.gameActive = false;
+  S.active = false;
   setTimeout(() => {
-    state.gameActive = true;
-    nextQuestion();
+    hideFeedback();
+    S.active = true;
+    nextPrompt();
   }, 700);
 }
 
-function handleWrong(clickedId) {
-  const cid = state.current;
-  state.districtAttempts[cid] = (state.districtAttempts[cid] || 0) + 1;
-
-  showFeedback('wrong', 'Try again');
-
-  const el = document.getElementById(clickedId);
-  if (el) {
-    el.classList.add('wrong-flash');
-    setTimeout(() => el.classList.remove('wrong-flash'), 300);
-  }
+function onWrong(id) {
+  if (S.current) S.attempts[S.current.id] = (S.attempts[S.current.id] || 0) + 1;
+  showFeedback('wrong', '✗ Not quite — try again!');
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('flash-wrong');
+  setTimeout(() => el.classList.remove('flash-wrong'), 550);
 }
 
-/* ============================================================
-   WIN SCREEN
-   ============================================================ */
-function endGame() {
-  clearInterval(state.timerInterval);
-  state.gameActive = false;
+/* ══════════════════════════════════════════════════════════
+   HUD / DISPLAY
+══════════════════════════════════════════════════════════ */
+function updateHUD() {
+  const n = DISTRICTS.length;
+  const c = S.completedIds.size;
+  $('stat-score').textContent    = `Score: ${S.score}`;
+  $('stat-progress').textContent = `${c} / ${n}`;
+  $('progress-fill').style.width = `${(c / n) * 100}%`;
+  $('sb-score').textContent      = S.score;
+  $('sb-found').textContent      = `${c} / ${n}`;
+  $('sb-accuracy').textContent   = accuracy();
+}
 
-  const total    = ALL_IU_IDS.length;
-  const accuracy = state.totalAttempts > 0
-    ? Math.round((state.completedIds.size / state.totalAttempts) * 100)
+function updateTimers() {
+  const t = fmt(S.seconds);
+  $('stat-timer').textContent = t;
+  $('sb-timer').textContent   = t;
+}
+
+function showFeedback(type, msg) {
+  const el = $('feedback');
+  el.textContent = msg;
+  el.className   = type === 'correct' ? 'show-correct' : 'show-wrong';
+}
+
+function hideFeedback() {
+  const el = $('feedback');
+  el.textContent = '';
+  el.className   = '';
+}
+
+/* ══════════════════════════════════════════════════════════
+   WIN SCREEN
+══════════════════════════════════════════════════════════ */
+function endGame() {
+  clearInterval(S.timerHandle);
+  S.active = false;
+
+  const acc = S.totalClicks > 0
+    ? Math.round((S.correctClicks / S.totalClicks) * 100)
     : 100;
 
-  const crowns = state.firstTryIds.size;
+  $('w-score').textContent    = S.score;
+  $('w-time').textContent     = fmt(S.seconds);
+  $('w-accuracy').textContent = acc + '%';
 
-  ui.winScore.textContent    = state.score;
-  ui.winTime.textContent     = formatTime(state.elapsedSeconds);
-  ui.winAccuracy.textContent = `${accuracy}%`;
-  ui.winCrowns.textContent   = crowns;
-
-  saveLeaderboard({
-    name:     state.playerName,
-    score:    state.score,
-    time:     state.elapsedSeconds,
-    accuracy,
-    crowns,
-  });
-
-  renderLeaderboard(ui.winLbBody);
+  const thisRun = { score: S.score, time: S.seconds, accuracy: acc, date: new Date().toLocaleDateString() };
+  saveRun(thisRun);
+  renderLeaderboard(thisRun);
   showScreen('win');
 }
 
-/* ============================================================
-   LEADERBOARD — localStorage
-   ============================================================ */
-const LS_KEY      = 'pa-iu-quiz-leaderboard-v1';
-const MAX_ENTRIES = 10;
+/* ══════════════════════════════════════════════════════════
+   LOCAL STORAGE LEADERBOARD
+══════════════════════════════════════════════════════════ */
+const LS_KEY = 'schuylkill-quiz-v3';
 
-function saveLeaderboard(entry) {
-  const board = loadLeaderboard();
-  board.push(entry);
-  board.sort((a, b) => b.score - a.score || a.time - b.time);
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(board.slice(0, MAX_ENTRIES)));
-  } catch(e) {}
+function saveRun(run) {
+  const runs = loadRuns();
+  runs.push(run);
+  runs.sort((a, b) =>
+    (b.score - a.score) ||
+    (a.time - b.time) ||
+    (b.accuracy - a.accuracy) ||
+    (b.crowns - a.crowns)
+  );
+  try { localStorage.setItem(LS_KEY, JSON.stringify(runs.slice(0, 10))); } catch {}
 }
 
-function loadLeaderboard() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
-  catch { return []; }
+function loadRuns() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
 }
 
-function clearLeaderboard() {
-  try { localStorage.removeItem(LS_KEY); } catch(e) {}
+function clearRuns() {
+  try { localStorage.removeItem(LS_KEY); } catch {}
 }
 
-function renderLeaderboard(tbodyEl) {
-  const board = loadLeaderboard();
-  tbodyEl.innerHTML = '';
+function renderLeaderboard(currentRun, bodyId = 'lb-body') {
+  const MEDALS = ['🥇', '🥈', '🥉'];
+  const runs   = loadRuns();
+  const tb     = $(bodyId);
+  tb.innerHTML = '';
 
-  if (board.length === 0) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="6" style="color:#64748b;text-align:center;padding:.6rem">No records yet</td>`;
-    tbodyEl.appendChild(tr);
+  if (!runs.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:.75rem">No records yet — play to set one!</td></tr>';
     return;
   }
 
-  board.forEach((entry, i) => {
-    const tr = document.createElement('tr');
-    const crownsDisplay = entry.crowns > 0 ? `${entry.crowns} 👑` : '—';
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${entry.name || '—'}</td>
-      <td>${entry.score}</td>
-      <td>${formatTime(entry.time)}</td>
-      <td>${entry.accuracy}%</td>
-      <td class="crown-cell">${crownsDisplay}</td>
+  runs.forEach((r, i) => {
+    const medal   = MEDALS[i] || `${i + 1}`;
+    const isThis  = currentRun && r.stamp === currentRun.stamp;
+    const tr      = document.createElement('tr');
+    if (isThis) tr.classList.add('this-run');
+    tr.innerHTML  = `
+      <td class="rank-cell">${medal}</td>
+      <td>${r.name || '—'}</td>
+      <td><strong>${r.score}</strong></td>
+      <td>${fmt(r.time)}</td>
+      <td>${r.accuracy}%</td>
+      <td class="crown-cell">${r.crowns ? `${r.crowns} 👑` : '—'}</td>
     `;
-    tbodyEl.appendChild(tr);
+    tb.appendChild(tr);
   });
 }
 
-function renderAllLeaderboards() {
-  renderLeaderboard(ui.startLbBody);
-  renderLeaderboard(ui.winLbBody);
+function renderAllLeaderboards(currentRun = null) {
+  renderLeaderboard(currentRun, 'start-lb-body');
+  renderLeaderboard(currentRun, 'lb-body');
 }
 
-/* ============================================================
-   WIRE UP EVENTS
-   ============================================================ */
-// Map region clicks
-ALL_IU_IDS.forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener('click', () => handleClick(id));
-});
+/* ══════════════════════════════════════════════════════════
+   EVENT WIRING
+══════════════════════════════════════════════════════════ */
+$('btn-start').addEventListener('click', startGame);
+$('btn-restart').addEventListener('click', () => { showScreen('start'); renderAllLeaderboards(); });
+$('btn-clear-lb').addEventListener('click', () => { if (confirm('Reset the leaderboard?')) { clearRuns(); renderAllLeaderboards(); } });
+$('btn-reset-start').addEventListener('click', () => { if (confirm('Reset the leaderboard?')) { clearRuns(); renderAllLeaderboards(); } });
+$('player-name').addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); });
 
-ui.btnStart.addEventListener('click', startGame);
-
-ui.playerInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') startGame();
-});
-
-ui.btnRestart.addEventListener('click', () => {
-  showScreen('start');
-  renderLeaderboard(ui.startLbBody);
-});
-
-ui.btnResetLbStart.addEventListener('click', () => {
-  if (confirm('Reset the entire leaderboard? This cannot be undone.')) {
-    clearLeaderboard();
-    renderAllLeaderboards();
-  }
-});
-
-ui.btnResetLbWin.addEventListener('click', () => {
-  if (confirm('Reset the entire leaderboard? This cannot be undone.')) {
-    clearLeaderboard();
-    renderAllLeaderboards();
-  }
-});
-
-/* ============================================================
-   STARTUP
-   ============================================================ */
-// Store original colors so reset works
-ALL_IU_IDS.forEach(id => {
-  const el = document.getElementById(id);
-  if (el && !el.getAttribute('data-orig-fill')) {
-    el.setAttribute('data-orig-fill', el.getAttribute('fill'));
-  }
-});
-
-renderLeaderboard(ui.startLbBody);
+/* ══════════════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════════════ */
+buildChecklist();
+applyDistrictColors();
+attachMapClicks();
+renderAllLeaderboards();
 showScreen('start');
 </script>
 </body>
